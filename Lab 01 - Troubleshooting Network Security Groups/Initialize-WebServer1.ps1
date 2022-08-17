@@ -40,7 +40,7 @@ catch {
 #See: https://docs.microsoft.com/en-us/aspnet/core/tutorials/publish-to-iis?view=aspnetcore-6.0&tabs=visual-studio
 try {
     Write-Verbose "START: Install .Net Core IIS Hosting Bundle"
-    Start-Process -FilePath "msiexec" -ArgumentList @('/i','C:\temp\dotnet-hosting.exe','/qn','/norestart') -Wait
+    Start-Process -FilePath "C:\temp\dotnet-hosting.exe" -ArgumentList @('/install','/quiet','/norestart') -Wait
     Write-Verbose "END: Install .Net Core IIS Hosting Bundle"
 }
 catch {
@@ -53,6 +53,8 @@ try {
     Write-Verbose "START: Secure WebServer"
     #Forbid other IPs from connecting to the WebServer
     Add-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "." -value @{ipAddress='10.0.0.5';allowed='True'}
+    Set-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "allowUnlisted" -value "False"
+    Set-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "denyAction" -value "Forbidden"
     #Disable Remote Desktop Firewall Rule
     #TODO: Add back after testing
     #Get-NetFirewallRule -Name "*RemoteDesktop*" | Where-Object Enabled -eq True | Set-NetFirewallRule -Enabled False
@@ -79,10 +81,12 @@ catch {
     Write-Verbose "ERROR: Set Physical Path and Credentials"
     throw $_
 }
-#Restart IIS
+
+#Restart IIS Services
 try {
     Write-Verbose "START: Restart required services"
-    Start-Process -FilePath "IISRESET" -Wait
+    Stop-Service -Name was -Force
+    Start-Service -Name w3svc
     Write-Verbose "END: Restart required services"
 }
 catch {
