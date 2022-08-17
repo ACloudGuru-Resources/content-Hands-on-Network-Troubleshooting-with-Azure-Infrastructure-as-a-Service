@@ -28,7 +28,7 @@ catch {
 #Install .Net Core IIS Hosting Bundle
 try {
     Write-Verbose "START: Download .Net Core IIS Hosting Bundle"
-    Invoke-WebRequest -Uri 'https://download.visualstudio.microsoft.com/download/pr/7de08ae2-75e6-49b8-b04a-31526204fa7b/c1cee44a509495e4bb0bba49f52c719a/dotnet-hosting-6.0.7-win.exe' -OutFile 'C:\temp\dotnet-hosting.exe'
+    Invoke-WebRequest -Uri 'https://download.visualstudio.microsoft.com/download/pr/beca42b0-54a8-4364-86b8-a3d88003fbb7/592e0eec1e5e53f78d9647f7112cc743/dotnet-hosting-3.1.9-win.exe' -OutFile 'C:\temp\dotnet-hosting.exe'
     Write-Verbose "END: Download .Net Core IIS Hosting Bundle"
 }
 catch {
@@ -64,13 +64,29 @@ try {
 
 #Set Physical Path and Credentials
 try {
+    #Physical Path
     Write-Verbose "START: Set Physical Path and Credentials"
     Set-ItemProperty 'IIS:\Sites\Default Web Site\' -Name physicalPath -Value '\\10.0.1.139\Web'
     Set-ItemProperty 'IIS:\Sites\Default Web Site\' -Name userName -Value 'DoNotUse'
     Set-ItemProperty 'IIS:\Sites\Default Web Site\' -Name password -Value 'DoNotUse!'
+    #App Pool
+    Set-ItemProperty IIS:\AppPools\DefaultAppPool -name processModel.identityType -Value SpecificUser
+    Set-ItemProperty IIS:\AppPools\DefaultAppPool -name processModel.userName -Value "DoNotUse"
+    Set-ItemProperty IIS:\AppPools\DefaultAppPool -name processModel.password -Value "DoNotUse!"
     Write-Verbose "END: Set Physical Path and Credentials"
 }
 catch {
     Write-Verbose "ERROR: Set Physical Path and Credentials"
+    throw $_
+}
+#Restart the required services
+try {
+    Write-Verbose "START: Restart required services"
+    Restart-Service -Name was -Force
+    Start-Service -Name w3svc
+    Write-Verbose "END: Restart required services"
+}
+catch {
+    Write-Verbose "ERROR: Restart required services"
     throw $_
 }
