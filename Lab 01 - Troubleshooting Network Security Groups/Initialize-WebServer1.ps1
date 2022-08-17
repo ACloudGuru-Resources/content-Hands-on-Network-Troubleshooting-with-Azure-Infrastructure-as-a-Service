@@ -79,11 +79,10 @@ catch {
     Write-Verbose "ERROR: Set Physical Path and Credentials"
     throw $_
 }
-#Restart the required services
+#Restart IIS
 try {
     Write-Verbose "START: Restart required services"
-    Restart-Service -Name was -Force
-    Start-Service -Name w3svc
+    Start-Process -FilePath "IISRESET" -Wait
     Write-Verbose "END: Restart required services"
 }
 catch {
