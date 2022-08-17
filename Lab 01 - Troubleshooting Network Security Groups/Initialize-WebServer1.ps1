@@ -28,7 +28,7 @@ catch {
 #Install .Net Core IIS Hosting Bundle
 try {
     Write-Verbose "START: Download .Net Core IIS Hosting Bundle"
-    Invoke-WebRequest -Uri 'https://download.visualstudio.microsoft.com/download/pr/beca42b0-54a8-4364-86b8-a3d88003fbb7/592e0eec1e5e53f78d9647f7112cc743/dotnet-hosting-3.1.9-win.exe' -OutFile 'C:\temp\dotnet-hosting.exe'
+    Invoke-WebRequest -Uri 'https://download.visualstudio.microsoft.com/download/pr/c5e0609f-1db5-4741-add0-a37e8371a714/1ad9c59b8a92aeb5d09782e686264537/dotnet-hosting-6.0.8-win.exe' -OutFile 'C:\temp\dotnet-hosting.exe'
     Write-Verbose "END: Download .Net Core IIS Hosting Bundle"
 }
 catch {
