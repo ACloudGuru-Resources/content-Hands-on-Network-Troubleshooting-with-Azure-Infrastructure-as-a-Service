@@ -220,7 +220,23 @@ resource jumpbox1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
     }
   }
 }
-
+resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
+  parent: jumpbox1
+  name: 'jumpbox1-cse'
+  location: location
+  properties: {
+    publisher: 'Microsoft.Compute'
+    type: 'CustomScriptExtension'
+    typeHandlerVersion: '1.10'
+    autoUpgradeMinorVersion: true
+    protectedSettings: {
+      fileUris: [
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/Initialize-JumpBox1.ps1'
+      ]
+      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-JumpBox1.ps1'
+    }
+  }
+}
 resource webserver1nic1 'Microsoft.Network/networkInterfaces@2020-11-01' = {
   name: 'webserver1nic1'
   location: location
@@ -279,7 +295,7 @@ resource webserver1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
     }
   }
 }
-resource CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
+resource webserver1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
   parent: webserver1
   name: 'webserver1-cse'
   location: location
@@ -288,13 +304,14 @@ resource CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
     type: 'CustomScriptExtension'
     typeHandlerVersion: '1.10'
     autoUpgradeMinorVersion: true
-    settings: {
-      fileUris: ''
-      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -Command $ProgressPreference = "SilentlyContinue"; Add-WindowsFeature Web-Server; Import-Module WebAdministration'
+    protectedSettings: {
+      fileUris: [
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/Initialize-WebServer1.ps1'
+      ]
+      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer1.ps1'
     }
   }
 }
-
 resource fileserver1nic1 'Microsoft.Network/networkInterfaces@2020-11-01' = {
   name: 'fileserver1nic1'
   location: location
@@ -316,7 +333,6 @@ resource fileserver1nic1 'Microsoft.Network/networkInterfaces@2020-11-01' = {
     }
   }
 }
-
 resource nsgfileserver1nic1 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {
   name: 'nsg-fileserver1nic1'
   location: location
@@ -339,7 +355,6 @@ resource nsgfileserver1nic1 'Microsoft.Network/networkSecurityGroups@2019-11-01'
     ]
   }
 }
-
 resource fileserver1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
   name: 'fileserver1'
   location: location
@@ -379,3 +394,29 @@ resource fileserver1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
     }
   }
 }
+resource fileserver1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
+  parent: fileserver1
+  name: 'fileserver1-cse'
+  location: location
+  properties: {
+    publisher: 'Microsoft.Compute'
+    type: 'CustomScriptExtension'
+    typeHandlerVersion: '1.10'
+    autoUpgradeMinorVersion: true
+    protectedSettings: {
+      fileUris: [
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/Initialize-FileServer1.ps1'
+      ]
+      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-FileServer1.ps1'
+    }
+  }
+}
+
+output vmsWithLogin array  = [
+  {
+    name: 'jumpbox1'
+    showPrivateIp: false
+    showPublicIp: true
+    showFqdn: false
+  }
+]
