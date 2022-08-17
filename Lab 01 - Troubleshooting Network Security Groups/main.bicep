@@ -266,7 +266,7 @@ resource webserver1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
     osProfile: {
       computerName: 'webserver1'
       adminUsername: 'DoNotUse'
-      adminPassword: 'DoNotUse!'
+      adminPassword: 'DoNotUse123!'
     }
     storageProfile: {
       imageReference: {
@@ -368,7 +368,7 @@ resource fileserver1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
     osProfile: {
       computerName: 'fileserver1'
       adminUsername: 'DoNotUse'
-      adminPassword: 'DoNotUse!'
+      adminPassword: 'DoNotUse123!'
     }
     storageProfile: {
       imageReference: {

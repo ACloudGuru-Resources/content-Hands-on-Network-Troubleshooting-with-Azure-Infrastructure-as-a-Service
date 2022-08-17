@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "16098766887383407183"
+      "templateHash": "8270999543996393293"
     }
   },
   "parameters": {
@@ -307,7 +307,7 @@
         "osProfile": {
           "computerName": "webserver1",
           "adminUsername": "DoNotUse",
-          "adminPassword": "DoNotUse!"
+          "adminPassword": "DoNotUse123!"
         },
         "storageProfile": {
           "imageReference": {
@@ -424,7 +424,7 @@
         "osProfile": {
           "computerName": "fileserver1",
           "adminUsername": "DoNotUse",
-          "adminPassword": "DoNotUse!"
+          "adminPassword": "DoNotUse123!"
         },
         "storageProfile": {
           "imageReference": {
