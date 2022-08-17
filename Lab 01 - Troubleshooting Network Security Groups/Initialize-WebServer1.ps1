@@ -2,14 +2,15 @@
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "Stop"
 $VerbosePreference = "Continue"
-
+ 
 #Install IIS
 try {
     Write-Verbose "START: Installing IIS"
-    Add-WindowsFeature Web-Server,Web-IP-Security -IncludeManagementTools
+    Add-WindowsFeature Web-Server, Web-IP-Security -IncludeManagementTools
     Write-Verbose "END: Installing IIS"
-
-} catch {
+ 
+}
+catch {
     Write-Verbose "ERROR: Installing IIS"
     throw $_
 }
@@ -18,14 +19,14 @@ try {
     Write-Verbose "START: Import WebAdministration"
     Import-Module WebAdministration
     Write-Verbose "END: Import WebAdministration"
-
+ 
 }
 catch {
     Write-Verbose "ERROR: Import WebAdministration"
     throw $_
 }
-
-#Install .Net Core IIS Hosting Bundle
+ 
+#Download .Net Core IIS Hosting Bundle
 try {
     Write-Verbose "START: Download .Net Core IIS Hosting Bundle"
     Invoke-WebRequest -Uri 'https://download.visualstudio.microsoft.com/download/pr/c5e0609f-1db5-4741-add0-a37e8371a714/1ad9c59b8a92aeb5d09782e686264537/dotnet-hosting-6.0.8-win.exe' -OutFile 'C:\temp\dotnet-hosting.exe'
@@ -35,35 +36,36 @@ catch {
     Write-Verbose "ERROR: Download .Net Core IIS Hosting Bundle"
     throw $_
 }
-
+ 
 #Install the .Net Core IIS Hosting Bundle
 #See: https://docs.microsoft.com/en-us/aspnet/core/tutorials/publish-to-iis?view=aspnetcore-6.0&tabs=visual-studio
 try {
     Write-Verbose "START: Install .Net Core IIS Hosting Bundle"
-    Start-Process -FilePath "C:\temp\dotnet-hosting.exe" -ArgumentList @('/install','/quiet','/norestart') -Wait
+    Start-Process -FilePath "C:\temp\dotnet-hosting.exe" -ArgumentList @('/quiet', '/norestart', 'OPT_NO_ANCM=0') -Wait -PassThru
     Write-Verbose "END: Install .Net Core IIS Hosting Bundle"
 }
 catch {
     Write-Verbose "ERROR: Install .Net Core IIS Hosting Bundle"
     throw $_
 }
-
+ 
 #Secure WebServer
 try {
     Write-Verbose "START: Secure WebServer"
     #Forbid other IPs from connecting to the WebServer
-    Add-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "." -value @{ipAddress='10.0.0.5';allowed='True'}
+    Add-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "." -value @{ipAddress = '10.0.0.5'; allowed = 'True' }
     Set-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "allowUnlisted" -value "False"
     Set-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "denyAction" -value "Forbidden"
     #Disable Remote Desktop Firewall Rule
     #TODO: Add back after testing
     #Get-NetFirewallRule -Name "*RemoteDesktop*" | Where-Object Enabled -eq True | Set-NetFirewallRule -Enabled False
     Write-Verbose "END: Secure WebServer"
-} catch {
+}
+catch {
     Write-Verbose "ERROR: Secure WebServer"
     throw $_
 }
-
+ 
 #Set Physical Path and Credentials
 try {
     #Physical Path
@@ -81,7 +83,7 @@ catch {
     Write-Verbose "ERROR: Set Physical Path and Credentials"
     throw $_
 }
-
+ 
 #Restart IIS Services
 try {
     Write-Verbose "START: Restart required services"
@@ -92,4 +94,5 @@ try {
 catch {
     Write-Verbose "ERROR: Restart required services"
     throw $_
-}
+} 
+ 
