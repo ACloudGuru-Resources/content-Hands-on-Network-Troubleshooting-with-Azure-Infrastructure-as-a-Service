@@ -68,11 +68,11 @@ try {
     Write-Verbose "START: Set Physical Path and Credentials"
     Set-ItemProperty 'IIS:\Sites\Default Web Site\' -Name physicalPath -Value '\\10.0.1.139\Web'
     Set-ItemProperty 'IIS:\Sites\Default Web Site\' -Name userName -Value 'DoNotUse'
-    Set-ItemProperty 'IIS:\Sites\Default Web Site\' -Name password -Value 'DoNotUse123!'
+    Set-ItemProperty 'IIS:\Sites\Default Web Site\' -Name password -Value 'SuperSecureP@55w0rd'
     #App Pool
     Set-ItemProperty IIS:\AppPools\DefaultAppPool -name processModel.identityType -Value SpecificUser
     Set-ItemProperty IIS:\AppPools\DefaultAppPool -name processModel.userName -Value "DoNotUse"
-    Set-ItemProperty IIS:\AppPools\DefaultAppPool -name processModel.password -Value "DoNotUse123!"
+    Set-ItemProperty IIS:\AppPools\DefaultAppPool -name processModel.password -Value "SuperSecureP@55w0rd"
     Write-Verbose "END: Set Physical Path and Credentials"
 }
 catch {

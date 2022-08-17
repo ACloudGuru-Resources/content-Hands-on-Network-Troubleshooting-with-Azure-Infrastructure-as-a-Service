@@ -307,7 +307,7 @@
         "osProfile": {
           "computerName": "webserver1",
           "adminUsername": "DoNotUse",
-          "adminPassword": "DoNotUse123!"
+          "adminPassword": "SuperSecureP@55w0rd"
         },
         "storageProfile": {
           "imageReference": {
@@ -424,7 +424,7 @@
         "osProfile": {
           "computerName": "fileserver1",
           "adminUsername": "DoNotUse",
-          "adminPassword": "DoNotUse123!"
+          "adminPassword": "SuperSecureP@55w0rd"
         },
         "storageProfile": {
           "imageReference": {
