@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "2732274746415595106"
+      "templateHash": "16098766887383407183"
     }
   },
   "parameters": {
@@ -357,6 +357,7 @@
         }
       },
       "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'fileserver1', 'fileserver1-cse')]",
         "[resourceId('Microsoft.Compute/virtualMachines', 'webserver1')]"
       ]
     },
