@@ -54,7 +54,8 @@ try {
     #Forbid other IPs from connecting to the WebServer
     Add-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "." -value @{ipAddress='10.0.0.5';allowed='True'}
     #Disable Remote Desktop Firewall Rule
-    Get-NetFirewallRule -Name "*RemoteDesktop*" | Where-Object Enabled -eq True | Set-NetFirewallRule -Enabled False
+    #TODO: Add back after testing
+    #Get-NetFirewallRule -Name "*RemoteDesktop*" | Where-Object Enabled -eq True | Set-NetFirewallRule -Enabled False
     Write-Verbose "END: Secure WebServer"
 } catch {
     Write-Verbose "ERROR: Secure WebServer"
