@@ -25,18 +25,18 @@ catch {
     Write-Verbose "ERROR: Import WebAdministration"
     throw $_
 }
- 
- #Download .Net Core IIS Hosting Bundle
- try {
+
+#Download .Net Core IIS Hosting Bundle
+try {
     Write-Verbose "START: Download .Net Core IIS Hosting Bundle"
-    Invoke-WebRequest -Uri 'https://download.visualstudio.microsoft.com/download/pr/c5e0609f-1db5-4741-add0-a37e8371a714/1ad9c59b8a92aeb5d09782e686264537/dotnet-hosting-6.0.8-win.exe' -OutFile 'C:\temp\dotnet-hosting.exe'
+    Invoke-WebRequest -Uri 'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/raw/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/WebApp/dotnet-hosting.exe' -OutFile 'C:\temp\dotnet-hosting.exe'
     Write-Verbose "END: Download .Net Core IIS Hosting Bundle"
 }
 catch {
     Write-Verbose "ERROR: Download .Net Core IIS Hosting Bundle"
     throw $_
 }
- 
+
 #Install the .Net Core IIS Hosting Bundle
 #See: https://docs.microsoft.com/en-us/aspnet/core/tutorials/publish-to-iis?view=aspnetcore-6.0&tabs=visual-studio
 try {
@@ -49,8 +49,28 @@ catch {
     throw $_
 }
 
-Start-Process -FilePath 'msiexec' -ArgumentList @('/i "C:\Temp\AspNetCoreModuleV2_x64.msi"', '/qn') -Wait 
+#Download the Core Module
+#Note: This should be installed automatically, but it wasn't, so manual it is!
+try {
+    Write-Verbose "START: Download .Net Core Module"
+    Invoke-WebRequest -Uri 'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/raw/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/WebApp/AspNetCoreModuleV2_x64.msi' -OutFile 'C:\temp\AspNetCoreModuleV2_x64.msi'
+    Write-Verbose "END: Download .Net Core Module"
+}
+catch {
+    Write-Verbose "ERROR: Download .Net Core Module"
+    throw $_
+}
 
+#Install Core Module
+try {
+    Write-Verbose "START: Install .Net Core Module"
+    Start-Process -FilePath 'msiexec' -ArgumentList @('/i "C:\Temp\AspNetCoreModuleV2_x64.msi"', '/qn') -Wait 
+    Write-Verbose "END: Install .Net Core Module"
+}
+catch {
+    Write-Verbose "ERROR: Install .Net Core Module"
+    throw $_
+}
 
 #Secure WebServer
 try {
