@@ -26,8 +26,8 @@ catch {
     throw $_
 }
  
-#Download .Net Core IIS Hosting Bundle
-try {
+ #Download .Net Core IIS Hosting Bundle
+ try {
     Write-Verbose "START: Download .Net Core IIS Hosting Bundle"
     Invoke-WebRequest -Uri 'https://download.visualstudio.microsoft.com/download/pr/c5e0609f-1db5-4741-add0-a37e8371a714/1ad9c59b8a92aeb5d09782e686264537/dotnet-hosting-6.0.8-win.exe' -OutFile 'C:\temp\dotnet-hosting.exe'
     Write-Verbose "END: Download .Net Core IIS Hosting Bundle"
@@ -41,14 +41,17 @@ catch {
 #See: https://docs.microsoft.com/en-us/aspnet/core/tutorials/publish-to-iis?view=aspnetcore-6.0&tabs=visual-studio
 try {
     Write-Verbose "START: Install .Net Core IIS Hosting Bundle"
-    Start-Process -FilePath "C:\temp\dotnet-hosting.exe" -ArgumentList @('/quiet', '/norestart', 'OPT_NO_ANCM=0') -Wait -PassThru
+    Start-Process -FilePath "C:\temp\dotnet-hosting.exe" -ArgumentList @('/quiet', '/norestart') -Wait -PassThru
     Write-Verbose "END: Install .Net Core IIS Hosting Bundle"
 }
 catch {
     Write-Verbose "ERROR: Install .Net Core IIS Hosting Bundle"
     throw $_
 }
- 
+
+Start-Process -FilePath 'msiexec' -ArgumentList @('/i "C:\Temp\AspNetCoreModuleV2_x64.msi"', '/qn') -Wait 
+
+
 #Secure WebServer
 try {
     Write-Verbose "START: Secure WebServer"
