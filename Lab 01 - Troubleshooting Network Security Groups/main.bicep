@@ -166,7 +166,7 @@ resource nsgjumpbox1nic1 'Microsoft.Network/networkSecurityGroups@2019-11-01' = 
   properties: {
     securityRules: [
       {
-        name: 'AllowRDP'
+        name: 'Allow Remote Desktop to jumpbox1'
         properties: {
           description: 'Allow Remote Desktop to jumpbox1'
           protocol: 'Tcp'
@@ -297,9 +297,6 @@ resource webserver1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
 }
 resource webserver1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
   parent: webserver1
-  dependsOn: [
-    fileserver1CSE
-  ]
   name: 'webserver1-cse'
   location: location
   properties: {
