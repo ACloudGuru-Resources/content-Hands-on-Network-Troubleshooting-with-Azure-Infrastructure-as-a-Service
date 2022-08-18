@@ -29,7 +29,7 @@ catch {
 #Download .Net Core IIS Hosting Bundle
 try {
     Write-Verbose "START: Download .Net Core IIS Hosting Bundle"
-    Invoke-WebRequest -Uri 'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/raw/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/WebApp/dotnet-hosting.exe' -OutFile 'C:\temp\dotnet-hosting.exe'
+    Invoke-WebRequest -Uri 'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/raw/master/Shared/Software/dotnet-hosting.exe' -OutFile 'C:\temp\dotnet-hosting.exe'
     Write-Verbose "END: Download .Net Core IIS Hosting Bundle"
 }
 catch {
@@ -53,7 +53,7 @@ catch {
 #Note: This should be installed automatically, but it wasn't, so manual it is!
 try {
     Write-Verbose "START: Download .Net Core Module"
-    Invoke-WebRequest -Uri 'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/raw/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/WebApp/AspNetCoreModuleV2_x64.msi' -OutFile 'C:\temp\AspNetCoreModuleV2_x64.msi'
+    Invoke-WebRequest -Uri 'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/raw/master/Shared/Software/AspNetCoreModuleV2_x64.msi' -OutFile 'C:\temp\AspNetCoreModuleV2_x64.msi'
     Write-Verbose "END: Download .Net Core Module"
 }
 catch {

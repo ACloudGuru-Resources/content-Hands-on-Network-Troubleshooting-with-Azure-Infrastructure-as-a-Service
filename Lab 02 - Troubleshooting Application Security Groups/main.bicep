@@ -233,7 +233,7 @@ resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' =
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
-        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/Initialize-JumpBox1.ps1'
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2002%20-%20Troubleshooting%20Application%20Security%20Groups/Initialize-JumpBox1.ps1'
       ]
       commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-JumpBox1.ps1'
     }
@@ -301,7 +301,7 @@ resource webserver 'Microsoft.Compute/virtualMachines@2020-12-01' = [for i in ra
   }
 }]
 resource webserverCSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = [for i in range(1, 2): {
-  parent: resourceId('Microsoft.Compute/virtualMachines@2020-12-01', 'webserver${i}')
+  parent: webserver[i-1]
   name: 'webserver${i}-cse'
   location: location
   properties: {
@@ -311,7 +311,7 @@ resource webserverCSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' 
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
-        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/Initialize-WebServer1.ps1'
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2002%20-%20Troubleshooting%20Application%20Security%20Groups/Initialize-WebServer.ps1'
       ]
       commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer.ps1'
     }
