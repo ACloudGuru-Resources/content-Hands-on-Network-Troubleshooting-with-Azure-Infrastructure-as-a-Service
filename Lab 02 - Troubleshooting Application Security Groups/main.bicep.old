@@ -1,7 +1,7 @@
 param location string = resourceGroup().location
 
-resource workloadvnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
-  name: 'workloadvnet'
+resource vnet1 'Microsoft.Network/virtualNetworks@2019-11-01' = {
+  name: 'vnet1'
   location: location
   properties: {
     addressSpace: {
@@ -11,6 +11,15 @@ resource workloadvnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
     }
     subnets: [
       {
+        name: 'jump-subnet'
+        properties: {
+          addressPrefix: '10.0.0.0/24'
+          networkSecurityGroup: {
+            id: nsgjumpsubnet.id
+          }
+        }
+      }
+      {
         name: 'web-subnet'
         properties: {
           addressPrefix: '10.0.1.0/24'
@@ -19,67 +28,14 @@ resource workloadvnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
           }
         }
       }
-    ]
-  }
-}
-
-resource jumpboxvnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
-  name: 'jumpboxvnet'
-  location: location
-  properties: {
-    addressSpace: {
-      addressPrefixes: [
-        '10.1.0.0/16'
-      ]
-    }
-    subnets: [
       {
-        name: 'jump-subnet'
+        name: 'appgw-subnet'
         properties: {
-          addressPrefix: '10.1.0.0/24'
-          networkSecurityGroup: {
-            id: nsgjumpsubnet.id
-          }
+          addressPrefix: '10.0.2.0/24'
         }
       }
     ]
   }
-}
-
-resource vnetpeer1 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
-  name: '${workloadvnet.name}/peer1'
-  properties: {
-    allowVirtualNetworkAccess: true
-    allowForwardedTraffic: false
-    allowGatewayTransit: false
-    useRemoteGateways: false
-    remoteVirtualNetwork: {
-      id: jumpboxvnet.id
-    }
-  }
-}
-
-resource vnetpeer2 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
-  name: '${jumpboxvnet.name}/peer1'
-  properties: {
-    allowVirtualNetworkAccess: true
-    allowForwardedTraffic: false
-    allowGatewayTransit: false
-    useRemoteGateways: false
-    remoteVirtualNetwork: {
-      id: workloadvnet.id
-    }
-  }
-}
-
-resource asgjumpboxes 'Microsoft.Network/applicationSecurityGroups@2020-11-01' = {
-  name: 'jumpboxes'
-  location: location
-}
-
-resource asgwebservers 'Microsoft.Network/applicationSecurityGroups@2020-11-01' = {
-  name: 'webservers'
-  location: location
 }
 
 resource nsgwebsubnet 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {
@@ -190,12 +146,12 @@ resource jumpbox1nic1 'Microsoft.Network/networkInterfaces@2020-11-01' = {
         name: 'jumpbox1nic1ipconfig1'
         properties: {
           privateIPAllocationMethod: 'Static'
-          privateIPAddress: '10.1.0.5'
+          privateIPAddress: '10.0.0.5'
           publicIPAddress: {
             id: jumpbox1pip.id
           }
           subnet: {
-            id: jumpboxvnet.properties.subnets[0].id
+            id: vnet1.properties.subnets[0].id
           }
         }
       }
@@ -219,7 +175,7 @@ resource nsgjumpbox1nic1 'Microsoft.Network/networkSecurityGroups@2019-11-01' = 
           sourcePortRange: '*'
           destinationPortRange: '3389'
           sourceAddressPrefix: '*'
-          destinationAddressPrefix: '10.1.0.5'
+          destinationAddressPrefix: '10.0.0.5'
           access: 'Allow'
           priority: 100
           direction: 'Inbound'
@@ -266,7 +222,6 @@ resource jumpbox1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
     }
   }
 }
-
 resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
   parent: jumpbox1
   name: 'jumpbox1-cse'
@@ -284,7 +239,6 @@ resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' =
     }
   }
 }
-
 resource webserver1nic1 'Microsoft.Network/networkInterfaces@2020-11-01' = {
   name: 'webserver1nic1'
   location: location
@@ -296,8 +250,11 @@ resource webserver1nic1 'Microsoft.Network/networkInterfaces@2020-11-01' = {
           privateIPAllocationMethod: 'Static'
           privateIPAddress: '10.0.1.80'
           subnet: {
-            id: workloadvnet.properties.subnets[0].id
+            id: vnet1.properties.subnets[1].id
           }
+          applicationGatewayBackendAddressPools: [
+            appgw1.properties.backendAddressPools[0]
+          ]
         }
       }
     ]
@@ -314,8 +271,11 @@ resource webserver2nic1 'Microsoft.Network/networkInterfaces@2020-11-01' = {
           privateIPAllocationMethod: 'Static'
           privateIPAddress: '10.0.1.81'
           subnet: {
-            id: workloadvnet.properties.subnets[0].id
+            id: vnet1.properties.subnets[1].id
           }
+          applicationGatewayBackendAddressPools: [
+            appgw1.properties.backendAddressPools[0]
+          ]
         }
       }
     ]
@@ -433,6 +393,110 @@ resource webserver2CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01'
       ]
       commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer.ps1'
     }
+  }
+}
+
+resource appgw1 'Microsoft.Network/applicationGateways@2021-05-01' = {
+  name: 'appgw1'
+  location: location
+  properties: {
+    sku: {
+      name: 'Standard_Small'
+      tier: 'Standard'
+      capacity: 1
+    }
+    gatewayIPConfigurations: [
+      {
+        name: 'appGatewayIpConfig'
+        properties: {
+          subnet: {
+            id: vnet1.properties.subnets[2].id
+          }
+        }
+      }
+    ]
+    frontendIPConfigurations: [
+      {
+        name: 'appGwPrivateFrontendIp'
+        properties: {
+          privateIPAllocationMethod: 'Static'
+          privateIPAddress: '10.0.2.80'
+          subnet: {
+            id: vnet1.properties.subnets[2].id
+          }
+        }
+      }
+    ]
+    frontendPorts: [
+      {
+        name: 'port_80'
+        properties: {
+          port: 80
+        }
+      }
+    ]
+    backendAddressPools: [
+      {
+        name: 'webServerBackendPool'
+        properties: {
+          backendAddresses:[
+            {
+              ipAddress: '10.0.1.80'
+              fqdn: null
+          }
+          {
+              ipAddress: '10.0.1.81'
+              fqdn: null
+          }
+          ]
+        }
+      }
+    ]
+    backendHttpSettingsCollection: [
+      {
+        name: 'HTTP'
+        properties: {
+          port: 80
+          protocol: 'Http'
+          cookieBasedAffinity: 'Disabled'
+          requestTimeout: 20
+        }
+      }
+    ]
+    httpListeners: [
+      {
+        name: 'privateListener'
+        properties: {
+          frontendIPConfiguration: {
+            id: resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', 'appgw1', 'appGwPrivateFrontendIp')
+          }
+          frontendPort: {
+            id: resourceId('Microsoft.Network/applicationGateways/frontendPorts', 'appgw1', 'port_80')
+          }
+          protocol: 'Http'
+          sslCertificate: null
+          requireServerNameIndication: false
+        }
+      }
+    ]
+    requestRoutingRules: [
+      {
+        name: 'RoutePrivateHTTPToBackend'
+        properties: {
+          ruleType: 'Basic'
+          httpListener: {
+            id: resourceId('Microsoft.Network/applicationGateways/httpListeners', 'appgw1', 'privateListener')
+          }
+          backendAddressPool: {
+            id: resourceId('Microsoft.Network/applicationGateways/backendAddressPools', 'appgw1', 'webServerBackendPool')
+          }
+          backendHttpSettings: {
+            id: resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'appgw1', 'HTTP')
+          }
+        }
+      }
+    ]
+    enableHttp2: false
   }
 }
 

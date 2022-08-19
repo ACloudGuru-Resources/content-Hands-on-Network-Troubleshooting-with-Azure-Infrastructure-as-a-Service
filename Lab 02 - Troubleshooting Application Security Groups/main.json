@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "16796613920857519774"
+      "templateHash": "15624145825294096412"
     }
   },
   "parameters": {
@@ -18,7 +18,7 @@
     {
       "type": "Microsoft.Network/virtualNetworks",
       "apiVersion": "2019-11-01",
-      "name": "vnet1",
+      "name": "workloadvnet",
       "location": "[parameters('location')]",
       "properties": {
         "addressSpace": {
@@ -28,15 +28,6 @@
         },
         "subnets": [
           {
-            "name": "jump-subnet",
-            "properties": {
-              "addressPrefix": "10.0.0.0/24",
-              "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-jump-subnet')]"
-              }
-            }
-          },
-          {
             "name": "web-subnet",
             "properties": {
               "addressPrefix": "10.0.1.0/24",
@@ -44,19 +35,87 @@
                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-web-subnet')]"
               }
             }
-          },
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-web-subnet')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2019-11-01",
+      "name": "jumpboxvnet",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.1.0.0/16"
+          ]
+        },
+        "subnets": [
           {
-            "name": "asg-subnet",
+            "name": "jump-subnet",
             "properties": {
-              "addressPrefix": "10.0.2.0/24"
+              "addressPrefix": "10.1.0.0/24",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-jump-subnet')]"
+              }
             }
           }
         ]
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-jump-subnet')]",
-        "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-web-subnet')]"
+        "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-jump-subnet')]"
       ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2020-07-01",
+      "name": "[format('{0}/peer1', 'workloadvnet')]",
+      "properties": {
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": false,
+        "allowGatewayTransit": false,
+        "useRemoteGateways": false,
+        "remoteVirtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', 'jumpboxvnet')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', 'jumpboxvnet')]",
+        "[resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2020-07-01",
+      "name": "[format('{0}/peer1', 'jumpboxvnet')]",
+      "properties": {
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": false,
+        "allowGatewayTransit": false,
+        "useRemoteGateways": false,
+        "remoteVirtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', 'jumpboxvnet')]",
+        "[resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/applicationSecurityGroups",
+      "apiVersion": "2020-11-01",
+      "name": "jumpboxes",
+      "location": "[parameters('location')]"
+    },
+    {
+      "type": "Microsoft.Network/applicationSecurityGroups",
+      "apiVersion": "2020-11-01",
+      "name": "webservers",
+      "location": "[parameters('location')]"
     },
     {
       "type": "Microsoft.Network/networkSecurityGroups",
@@ -171,12 +230,12 @@
             "name": "jumpbox1nic1ipconfig1",
             "properties": {
               "privateIPAllocationMethod": "Static",
-              "privateIPAddress": "10.0.0.5",
+              "privateIPAddress": "10.1.0.5",
               "publicIPAddress": {
                 "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'jumpbox1pip1')]"
               },
               "subnet": {
-                "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'vnet1')).subnets[0].id]"
+                "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'jumpboxvnet')).subnets[0].id]"
               }
             }
           }
@@ -187,8 +246,8 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Network/publicIPAddresses', 'jumpbox1pip1')]",
-        "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-jumpbox1nic1')]",
-        "[resourceId('Microsoft.Network/virtualNetworks', 'vnet1')]"
+        "[resourceId('Microsoft.Network/virtualNetworks', 'jumpboxvnet')]",
+        "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-jumpbox1nic1')]"
       ]
     },
     {
@@ -206,7 +265,7 @@
               "sourcePortRange": "*",
               "destinationPortRange": "3389",
               "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "10.0.0.5",
+              "destinationAddressPrefix": "10.1.0.5",
               "access": "Allow",
               "priority": 100,
               "direction": "Inbound"
@@ -291,35 +350,50 @@
               "privateIPAllocationMethod": "Static",
               "privateIPAddress": "10.0.1.80",
               "subnet": {
-                "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'vnet1')).subnets[1].id]"
-              },
-              "applicationGatewayBackendAddressPools": [
-                "[reference(resourceId('Microsoft.Network/applicationGateways', 'appgw1')).backendAddressPools[0]]"
-              ]
+                "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')).subnets[0].id]"
+              }
             }
           }
         ]
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/applicationGateways', 'appgw1')]",
-        "[resourceId('Microsoft.Network/virtualNetworks', 'vnet1')]"
+        "[resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')]"
       ]
     },
     {
-      "copy": {
-        "name": "webserver",
-        "count": "[length(range(1, 2))]"
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-11-01",
+      "name": "webserver2nic1",
+      "location": "[parameters('location')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "webserver2nic1ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "10.0.1.81",
+              "subnet": {
+                "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')).subnets[0].id]"
+              }
+            }
+          }
+        ]
       },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')]"
+      ]
+    },
+    {
       "type": "Microsoft.Compute/virtualMachines",
       "apiVersion": "2020-12-01",
-      "name": "[format('webserver{0}', range(1, 2)[copyIndex()])]",
+      "name": "webserver1",
       "location": "[parameters('location')]",
       "properties": {
         "hardwareProfile": {
           "vmSize": "Standard_B2s"
         },
         "osProfile": {
-          "computerName": "[format('webserver{0}', range(1, 2)[copyIndex()])]",
+          "computerName": "webserver1",
           "adminUsername": "DoNotUse",
           "adminPassword": "SuperSecureP@55w0rd"
         },
@@ -354,13 +428,53 @@
       ]
     },
     {
-      "copy": {
-        "name": "webserverCSE",
-        "count": "[length(range(1, 2))]"
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2020-12-01",
+      "name": "webserver2",
+      "location": "[parameters('location')]",
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_B2s"
+        },
+        "osProfile": {
+          "computerName": "webserver2",
+          "adminUsername": "DoNotUse",
+          "adminPassword": "SuperSecureP@55w0rd"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "2022-datacenter",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "webserver2osdisk",
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', 'webserver2nic1')]"
+            }
+          ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": false
+          }
+        }
       },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', 'webserver2nic1')]"
+      ]
+    },
+    {
       "type": "Microsoft.Compute/virtualMachines/extensions",
       "apiVersion": "2020-12-01",
-      "name": "[format('{0}/{1}', format('webserver{0}', range(1, 2)[sub(range(1, 2)[copyIndex()], 1)]), format('webserver{0}-cse', range(1, 2)[copyIndex()]))]",
+      "name": "[format('{0}/{1}', 'webserver1', 'webserver1-cse')]",
       "location": "[parameters('location')]",
       "properties": {
         "publisher": "Microsoft.Compute",
@@ -375,128 +489,28 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Compute/virtualMachines', format('webserver{0}', range(1, 2)[sub(range(1, 2)[copyIndex()], 1)]))]"
+        "[resourceId('Microsoft.Compute/virtualMachines', 'webserver1')]"
       ]
     },
     {
-      "type": "Microsoft.Network/publicIPAddresses",
-      "apiVersion": "2021-05-01",
-      "name": "appgw1pip",
-      "location": "[parameters('location')]",
-      "sku": {
-        "name": "Standard"
-      },
-      "properties": {
-        "publicIPAddressVersion": "IPv4",
-        "publicIPAllocationMethod": "Static",
-        "idleTimeoutInMinutes": 4
-      }
-    },
-    {
-      "type": "Microsoft.Network/applicationGateways",
-      "apiVersion": "2021-05-01",
-      "name": "appgw1",
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2020-12-01",
+      "name": "[format('{0}/{1}', 'webserver2', 'webserver2-cse')]",
       "location": "[parameters('location')]",
       "properties": {
-        "sku": {
-          "name": "Standard_v2",
-          "tier": "Standard_v2"
-        },
-        "gatewayIPConfigurations": [
-          {
-            "name": "appGatewayIpConfig",
-            "properties": {
-              "subnet": {
-                "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'vnet1')).subnets[2].id]"
-              }
-            }
-          }
-        ],
-        "frontendIPConfigurations": [
-          {
-            "name": "appGwPublicFrontendIp",
-            "properties": {
-              "publicIPAddress": {
-                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'appgw1pip')]"
-              }
-            }
-          },
-          {
-            "name": "appGwPrivateFrontendIp",
-            "properties": {
-              "privateIPAllocationMethod": "Static",
-              "privateIPAddress": "10.0.2.80",
-              "subnet": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'vnet1')).subnets[2].id]"
-            }
-          }
-        ],
-        "frontendPorts": [
-          {
-            "name": "port_80",
-            "properties": {
-              "port": 80
-            }
-          }
-        ],
-        "backendAddressPools": [
-          {
-            "name": "webServerBackendPool",
-            "properties": {}
-          }
-        ],
-        "backendHttpSettingsCollection": [
-          {
-            "name": "HTTP",
-            "properties": {
-              "port": 80,
-              "protocol": "Http",
-              "cookieBasedAffinity": "Disabled",
-              "pickHostNameFromBackendAddress": false,
-              "requestTimeout": 20
-            }
-          }
-        ],
-        "httpListeners": [
-          {
-            "name": "privateListener",
-            "properties": {
-              "frontendIPConfiguration": {
-                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendIPConfigurations', 'appgw1', 'appGwPrivateFrontendIp')]"
-              },
-              "frontendPort": {
-                "id": "[resourceId('Microsoft.Network/applicationGateways/frontendPorts', 'appgw1', 'port_80')]"
-              },
-              "protocol": "Http",
-              "requireServerNameIndication": false
-            }
-          }
-        ],
-        "requestRoutingRules": [
-          {
-            "name": "RoutePrivateHTTPToBackend",
-            "properties": {
-              "ruleType": "Basic",
-              "httpListener": {
-                "id": "[resourceId('Microsoft.Network/applicationGateways/httpListeners', 'appgw1', 'privateListener')]"
-              },
-              "backendAddressPool": {
-                "id": "[resourceId('Microsoft.Network/applicationGateways/backendAddressPools', 'appgw1', 'webServerBackendPool')]"
-              },
-              "backendHttpSettings": {
-                "id": "[resourceId('Microsoft.Network/applicationGateways/backendHttpSettingsCollection', 'appgw1', 'HTTP')]"
-              }
-            }
-          }
-        ],
-        "enableHttp2": false,
-        "autoscaleConfiguration": {
-          "minCapacity": 0,
-          "maxCapacity": 10
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "autoUpgradeMinorVersion": true,
+        "protectedSettings": {
+          "fileUris": [
+            "https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2002%20-%20Troubleshooting%20Application%20Security%20Groups/Initialize-WebServer.ps1"
+          ],
+          "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer.ps1"
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/publicIPAddresses', 'appgw1pip')]",
-        "[resourceId('Microsoft.Network/virtualNetworks', 'vnet1')]"
+        "[resourceId('Microsoft.Compute/virtualMachines', 'webserver2')]"
       ]
     }
   ],
