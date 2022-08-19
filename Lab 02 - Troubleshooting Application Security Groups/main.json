@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "15624145825294096412"
+      "templateHash": "2756621725149976315"
     }
   },
   "parameters": {
@@ -32,14 +32,14 @@
             "properties": {
               "addressPrefix": "10.0.1.0/24",
               "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-web-subnet')]"
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-workloadvnet')]"
               }
             }
           }
         ]
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-web-subnet')]"
+        "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-workloadvnet')]"
       ]
     },
     {
@@ -59,14 +59,14 @@
             "properties": {
               "addressPrefix": "10.1.0.0/24",
               "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-jump-subnet')]"
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-jumpboxvnet')]"
               }
             }
           }
         ]
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-jump-subnet')]"
+        "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-jumpboxvnet')]"
       ]
     },
     {
@@ -120,22 +120,30 @@
     {
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2019-11-01",
-      "name": "nsg-web-subnet",
+      "name": "nsg-workloadvnet",
       "location": "[parameters('location')]",
       "properties": {
         "securityRules": [
           {
-            "name": "Allow web traffic to web subnet",
+            "name": "Allow web traffic from jumpboxes to webservers",
             "properties": {
-              "description": "Allow web traffic to web subnet",
+              "description": "Allow web traffic from jumpboxes to webservers",
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "destinationPortRange": "80",
-              "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "*",
               "access": "Allow",
               "priority": 100,
-              "direction": "Inbound"
+              "direction": "Inbound",
+              "sourceApplicationSecurityGroups": [
+                {
+                  "id": "[resourceId('Microsoft.Network/applicationSecurityGroups', 'jumpboxes')]"
+                }
+              ],
+              "destinationApplicationSecurityGroups": [
+                {
+                  "id": "[resourceId('Microsoft.Network/applicationSecurityGroups', 'webservers')]"
+                }
+              ]
             }
           },
           {
@@ -153,27 +161,35 @@
             }
           }
         ]
-      }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/applicationSecurityGroups', 'jumpboxes')]",
+        "[resourceId('Microsoft.Network/applicationSecurityGroups', 'webservers')]"
+      ]
     },
     {
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2019-11-01",
-      "name": "nsg-jump-subnet",
+      "name": "nsg-jumpboxvnet",
       "location": "[parameters('location')]",
       "properties": {
         "securityRules": [
           {
-            "name": "Allow inbound RDP jumpbox subnet",
+            "name": "Allow inbound RDP jumpboxes",
             "properties": {
-              "description": "Allow RDP jumpbox subnet",
+              "description": "Allow RDP jumpboxes",
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "destinationPortRange": "3389",
               "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "10.0.0.0/24",
               "access": "Allow",
               "priority": 100,
-              "direction": "Inbound"
+              "direction": "Inbound",
+              "destinationApplicationSecurityGroups": [
+                {
+                  "id": "[resourceId('Microsoft.Network/applicationSecurityGroups', 'jumpboxes')]"
+                }
+              ]
             }
           },
           {
@@ -183,7 +199,7 @@
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "destinationPortRange": "80",
-              "sourceAddressPrefix": "10.0.0.0/24",
+              "sourceAddressPrefix": "10.1.0.0/24",
               "destinationAddressPrefix": "10.0.1.0/24",
               "access": "Allow",
               "priority": 100,
@@ -191,13 +207,13 @@
             }
           },
           {
-            "name": "Deny outbound to vnet1 from jumpbox subnet",
+            "name": "Deny outbound from jumpboxvnet to workloadvnet",
             "properties": {
-              "description": "Deny outbound to vnet1 from jumpbox subnet",
+              "description": "Deny outbound from jumpboxvnet to workloadvnet",
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "destinationPortRange": "*",
-              "sourceAddressPrefix": "10.0.0.0/24",
+              "sourceAddressPrefix": "10.1.0.0/16",
               "destinationAddressPrefix": "10.0.0.0/16",
               "access": "Deny",
               "priority": 200,
@@ -205,7 +221,10 @@
             }
           }
         ]
-      }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/applicationSecurityGroups', 'jumpboxes')]"
+      ]
     },
     {
       "type": "Microsoft.Network/publicIPAddresses",
@@ -239,40 +258,12 @@
               }
             }
           }
-        ],
-        "networkSecurityGroup": {
-          "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-jumpbox1nic1')]"
-        }
+        ]
       },
       "dependsOn": [
         "[resourceId('Microsoft.Network/publicIPAddresses', 'jumpbox1pip1')]",
-        "[resourceId('Microsoft.Network/virtualNetworks', 'jumpboxvnet')]",
-        "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-jumpbox1nic1')]"
+        "[resourceId('Microsoft.Network/virtualNetworks', 'jumpboxvnet')]"
       ]
-    },
-    {
-      "type": "Microsoft.Network/networkSecurityGroups",
-      "apiVersion": "2019-11-01",
-      "name": "nsg-jumpbox1nic1",
-      "location": "[parameters('location')]",
-      "properties": {
-        "securityRules": [
-          {
-            "name": "AllowRDP",
-            "properties": {
-              "description": "Allow Remote Desktop to jumpbox1",
-              "protocol": "Tcp",
-              "sourcePortRange": "*",
-              "destinationPortRange": "3389",
-              "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "10.1.0.5",
-              "access": "Allow",
-              "priority": 100,
-              "direction": "Inbound"
-            }
-          }
-        ]
-      }
     },
     {
       "type": "Microsoft.Compute/virtualMachines",
@@ -351,35 +342,18 @@
               "privateIPAddress": "10.0.1.80",
               "subnet": {
                 "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')).subnets[0].id]"
-              }
+              },
+              "applicationSecurityGroups": [
+                {
+                  "id": "[resourceId('Microsoft.Network/applicationSecurityGroups', 'webservers')]"
+                }
+              ]
             }
           }
         ]
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')]"
-      ]
-    },
-    {
-      "type": "Microsoft.Network/networkInterfaces",
-      "apiVersion": "2020-11-01",
-      "name": "webserver2nic1",
-      "location": "[parameters('location')]",
-      "properties": {
-        "ipConfigurations": [
-          {
-            "name": "webserver2nic1ipconfig1",
-            "properties": {
-              "privateIPAllocationMethod": "Static",
-              "privateIPAddress": "10.0.1.81",
-              "subnet": {
-                "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')).subnets[0].id]"
-              }
-            }
-          }
-        ]
-      },
-      "dependsOn": [
+        "[resourceId('Microsoft.Network/applicationSecurityGroups', 'webservers')]",
         "[resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')]"
       ]
     },
@@ -428,50 +402,6 @@
       ]
     },
     {
-      "type": "Microsoft.Compute/virtualMachines",
-      "apiVersion": "2020-12-01",
-      "name": "webserver2",
-      "location": "[parameters('location')]",
-      "properties": {
-        "hardwareProfile": {
-          "vmSize": "Standard_B2s"
-        },
-        "osProfile": {
-          "computerName": "webserver2",
-          "adminUsername": "DoNotUse",
-          "adminPassword": "SuperSecureP@55w0rd"
-        },
-        "storageProfile": {
-          "imageReference": {
-            "publisher": "MicrosoftWindowsServer",
-            "offer": "WindowsServer",
-            "sku": "2022-datacenter",
-            "version": "latest"
-          },
-          "osDisk": {
-            "name": "webserver2osdisk",
-            "caching": "ReadWrite",
-            "createOption": "FromImage"
-          }
-        },
-        "networkProfile": {
-          "networkInterfaces": [
-            {
-              "id": "[resourceId('Microsoft.Network/networkInterfaces', 'webserver2nic1')]"
-            }
-          ]
-        },
-        "diagnosticsProfile": {
-          "bootDiagnostics": {
-            "enabled": false
-          }
-        }
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', 'webserver2nic1')]"
-      ]
-    },
-    {
       "type": "Microsoft.Compute/virtualMachines/extensions",
       "apiVersion": "2020-12-01",
       "name": "[format('{0}/{1}', 'webserver1', 'webserver1-cse')]",
@@ -490,27 +420,6 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Compute/virtualMachines', 'webserver1')]"
-      ]
-    },
-    {
-      "type": "Microsoft.Compute/virtualMachines/extensions",
-      "apiVersion": "2020-12-01",
-      "name": "[format('{0}/{1}', 'webserver2', 'webserver2-cse')]",
-      "location": "[parameters('location')]",
-      "properties": {
-        "publisher": "Microsoft.Compute",
-        "type": "CustomScriptExtension",
-        "typeHandlerVersion": "1.10",
-        "autoUpgradeMinorVersion": true,
-        "protectedSettings": {
-          "fileUris": [
-            "https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2002%20-%20Troubleshooting%20Application%20Security%20Groups/Initialize-WebServer.ps1"
-          ],
-          "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer.ps1"
-        }
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Compute/virtualMachines', 'webserver2')]"
       ]
     }
   ],
