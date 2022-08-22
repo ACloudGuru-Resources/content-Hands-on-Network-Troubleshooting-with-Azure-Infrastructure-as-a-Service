@@ -1,7 +1,7 @@
 param location string = resourceGroup().location
 
-resource workloadvnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
-  name: 'workloadvnet'
+resource hubvnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
+  name: 'hubvnet'
   location: location
   properties: {
     addressSpace: {
@@ -11,12 +11,29 @@ resource workloadvnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
     }
     subnets: [
       {
-        name: 'web-subnet'
+        name: 'AzureFirewallSubnet'
         properties: {
           addressPrefix: '10.0.0.0/24'
-          networkSecurityGroup: {
-            id: nsgworkloadvnet.id
-          }
+        }
+      }
+    ]
+  }
+}
+
+resource workloadvnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
+  name: 'workloadvnet'
+  location: location
+  properties: {
+    addressSpace: {
+      addressPrefixes: [
+        '10.1.0.0/16'
+      ]
+    }
+    subnets: [
+      {
+        name: 'web-subnet'
+        properties: {
+          addressPrefix: '10.1.0.0/24'
         }
       }
     ]
@@ -29,16 +46,16 @@ resource jumpboxvnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
   properties: {
     addressSpace: {
       addressPrefixes: [
-        '10.1.0.0/16'
+        '10.2.0.0/16'
       ]
     }
     subnets: [
       {
         name: 'jump-subnet'
         properties: {
-          addressPrefix: '10.1.0.0/24'
-          networkSecurityGroup: {
-            id: nsgjumpboxvnet.id
+          addressPrefix: '10.2.0.0/24'
+          routeTable: {
+            id: azureFirewallRoute.id
           }
         }
       }
@@ -46,12 +63,25 @@ resource jumpboxvnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
   }
 }
 
-resource vnetpeer1 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
-  name: '${workloadvnet.name}/peer1'
+resource vnetpeerjumpboxtohub 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
+  name: '${jumpboxvnet.name}/peertohub'
   properties: {
     allowVirtualNetworkAccess: true
-    allowForwardedTraffic: false
+    allowForwardedTraffic: true
     allowGatewayTransit: false
+    useRemoteGateways: false
+    remoteVirtualNetwork: {
+      id: hubvnet.id
+    }
+  }
+}
+
+resource vnetpeerhubtojumpbox 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
+  name: '${hubvnet.name}/peertojumpbox'
+  properties: {
+    allowVirtualNetworkAccess: true
+    allowForwardedTraffic: true
+    allowGatewayTransit: true
     useRemoteGateways: false
     remoteVirtualNetwork: {
       id: jumpboxvnet.id
@@ -59,12 +89,25 @@ resource vnetpeer1 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@202
   }
 }
 
-resource vnetpeer2 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
-  name: '${jumpboxvnet.name}/peer1'
+resource vnetpeerworkloadtohub 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
+  name: '${workloadvnet.name}/peertohub'
   properties: {
     allowVirtualNetworkAccess: true
-    allowForwardedTraffic: false
+    allowForwardedTraffic: true
     allowGatewayTransit: false
+    useRemoteGateways: false
+    remoteVirtualNetwork: {
+      id: hubvnet.id
+    }
+  }
+}
+
+resource vnetpeerhubtoworkload 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
+  name: '${hubvnet.name}/peertoworkload'
+  properties: {
+    allowVirtualNetworkAccess: true
+    allowForwardedTraffic: true
+    allowGatewayTransit: true
     useRemoteGateways: false
     remoteVirtualNetwork: {
       id: workloadvnet.id
@@ -72,129 +115,109 @@ resource vnetpeer2 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@202
   }
 }
 
-resource asgjumpboxes 'Microsoft.Network/applicationSecurityGroups@2020-11-01' = {
-  name: 'jumpboxes'
+resource pipFirewall 'Microsoft.Network/publicIPAddresses@2019-11-01' = {
+  name: 'pipAzureFirewall'
   location: location
-}
-
-resource asgwebservers 'Microsoft.Network/applicationSecurityGroups@2020-11-01' = {
-  name: 'webservers'
-  location: location
-}
-
-resource asgdatabaseservers 'Microsoft.Network/applicationSecurityGroups@2020-11-01' = {
-  name: 'databaseservers'
-  location: location
-}
-
-resource nsgworkloadvnet 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {
-  name: 'nsg-workloadvnet'
-  location: location
-  properties: {
-    securityRules: [
-      {
-        name: 'Allow HTTP traffic from jumpboxes to webservers'
-        properties: {
-          description: 'Allow HTTP traffic from jumpboxes to webservers'
-          protocol: 'Tcp'
-          sourcePortRange: '*'
-          destinationPortRange: '80'
-          access: 'Allow'
-          priority: 100
-          direction: 'Inbound'
-          sourceApplicationSecurityGroups: [
-            {
-              id: asgjumpboxes.id
-            }
-          ]
-          destinationApplicationSecurityGroups: [
-            {
-              id: asgdatabaseservers.id
-            }
-          ]
-        }
-      }
-      {
-        name: 'Deny all traffic to web subnet'
-        properties: {
-          description: 'Deny all traffic to web subnet'
-          protocol: 'Tcp'
-          sourcePortRange: '*'
-          destinationPortRange: '*'
-          sourceAddressPrefix: '*'
-          destinationAddressPrefix: '10.0.0.0/24'
-          access: 'Deny'
-          priority: 200
-          direction: 'Inbound'
-        }
-      }
-    ]
-  }
-}
-
-resource nsgjumpboxvnet 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {
-  name: 'nsg-jumpboxvnet'
-  location: location
-  properties: {
-    securityRules: [
-      {
-        name: 'Allow inbound RDP jumpboxes'
-        properties: {
-          description: 'Allow RDP jumpboxes'
-          protocol: 'Tcp'
-          sourcePortRange: '*'
-          destinationPortRange: '3389'
-          sourceAddressPrefix: '*'
-          access: 'Allow'
-          priority: 100
-          direction: 'Inbound'
-          destinationApplicationSecurityGroups: [
-            {
-              id: asgjumpboxes.id
-            }
-          ]
-        }
-      }
-      {
-        name: 'Allow outbound HTTP from jumpbox subnet to web subnet'
-        properties: {
-          description: 'Allow outbound HTTP from jumpbox subnet to web subnet'
-          protocol: 'Tcp'
-          sourcePortRange: '*'
-          destinationPortRange: '80'
-          sourceAddressPrefix: '10.1.0.0/24'
-          destinationAddressPrefix: '10.0.0.0/24'
-          access: 'Allow'
-          priority: 100
-          direction: 'Outbound'
-        }
-      }
-      {
-        name: 'Deny outbound from jumpboxvnet to workloadvnet'
-        properties: {
-          description: 'Deny outbound from jumpboxvnet to workloadvnet'
-          protocol: 'Tcp'
-          sourcePortRange: '*'
-          destinationPortRange: '*'
-          sourceAddressPrefix: '10.1.0.0/16'
-          destinationAddressPrefix: '10.0.0.0/16'
-          access: 'Deny'
-          priority: 200
-          direction: 'Outbound'
-        }
-      }
-    ]
-  }
-}
-
-resource jumpbox1pip 'Microsoft.Network/publicIPAddresses@2019-11-01' = {
-  name: 'jumpbox1pip1'
   sku: {
     name: 'Standard'
   }
-  location: location
   properties: {
     publicIPAllocationMethod: 'Static'
+  }
+}
+
+resource firewall 'Microsoft.Network/azureFirewalls@2020-05-01' = {
+  name: 'AzureFirewall'
+  location: location
+  properties: {
+    sku: {
+      name: 'AZFW_VNet'
+      tier: 'Standard'
+    }
+    threatIntelMode: 'Alert'
+    ipConfigurations: [
+      {
+        name: 'AzureFirewallipconfig1'
+        properties: {
+          publicIPAddress: {
+            id: pipFirewall.id
+          }
+          subnet: {
+            id: hubvnet.properties.subnets[0].id
+          }
+        }
+      }
+    ]
+    networkRuleCollections: [
+      {
+        name: 'AllowedNetworkRulesCollection'
+        properties: {
+            priority: 100
+            action: {
+                type: 'Allow'
+            }
+            rules: [
+                {
+                name: 'Allow HTTP to web subnet'  
+                protocols: [
+                    'TCP'
+                ]
+                sourceAddresses: [
+                    '*'
+                ]
+                destinationAddresses: [
+                    '10.1.0.0/24'
+                ]
+                sourceIpGroups: []
+                destinationIpGroups: []
+                destinationFqdns: []
+                destinationPorts: [
+                    '80'
+                ]
+            }
+          ]
+        }
+      }
+    ]
+    natRuleCollections: [
+      {
+        name: 'AllowedDNatRuleCollection'
+        properties: {
+            priority: 100
+            action: {
+                type: 'Dnat'
+            }
+            rules: [
+                {
+                    name: 'Forward RDP traffic to jumpbox'
+                    protocols: [
+                        'TCP'
+                    ]
+                    translatedAddress: '10.2.0.5'
+                    translatedPort: '3389'
+                    sourceAddresses: [
+                        '*'
+                    ]
+                    sourceIpGroups: []
+                    destinationAddresses: [
+                        pipFirewall.properties.ipAddress
+                    ]
+                    destinationPorts: [
+                        '3389'
+                    ]
+                }
+            ]
+        }
+      }
+    ]
+  }
+}
+
+resource azureFirewallRoute 'Microsoft.Network/routeTables@2020-05-01' = {
+  name: 'udrAzureFirewallRoute'
+  location: location
+  properties: {
+    disableBgpRoutePropagation: false
   }
 }
 
@@ -207,10 +230,7 @@ resource jumpbox1nic1 'Microsoft.Network/networkInterfaces@2020-11-01' = {
         name: 'jumpbox1nic1ipconfig1'
         properties: {
           privateIPAllocationMethod: 'Static'
-          privateIPAddress: '10.1.0.5'
-          publicIPAddress: {
-            id: jumpbox1pip.id
-          }
+          privateIPAddress: '10.2.0.5'
           subnet: {
             id: jumpboxvnet.properties.subnets[0].id
           }
@@ -285,15 +305,10 @@ resource webserver1nic1 'Microsoft.Network/networkInterfaces@2020-11-01' = {
         name: 'webserver1nic1ipconfig1'
         properties: {
           privateIPAllocationMethod: 'Static'
-          privateIPAddress: '10.0.0.80'
+          privateIPAddress: '10.1.0.80'
           subnet: {
             id: workloadvnet.properties.subnets[0].id
           }
-          applicationSecurityGroups: [
-            {
-              id: asgwebservers.id
-            }
-          ]
         }
       }
     ]
@@ -340,7 +355,6 @@ resource webserver1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
   }
 }
 
-
 resource webserver1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
   parent: webserver1
   name: 'webserver1-cse'
@@ -359,7 +373,7 @@ resource webserver1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01'
   }
 }
 
-output vmsWithLogin array  = [
+output vmsWithLogin array = [
   {
     name: 'jumpbox1'
     showPrivateIp: false

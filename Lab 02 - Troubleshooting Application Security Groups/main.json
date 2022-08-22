@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "2756621725149976315"
+      "templateHash": "5803915539816203380"
     }
   },
   "parameters": {
@@ -30,7 +30,7 @@
           {
             "name": "web-subnet",
             "properties": {
-              "addressPrefix": "10.0.1.0/24",
+              "addressPrefix": "10.0.0.0/24",
               "networkSecurityGroup": {
                 "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-workloadvnet')]"
               }
@@ -118,6 +118,12 @@
       "location": "[parameters('location')]"
     },
     {
+      "type": "Microsoft.Network/applicationSecurityGroups",
+      "apiVersion": "2020-11-01",
+      "name": "databaseservers",
+      "location": "[parameters('location')]"
+    },
+    {
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2019-11-01",
       "name": "nsg-workloadvnet",
@@ -125,9 +131,9 @@
       "properties": {
         "securityRules": [
           {
-            "name": "Allow web traffic from jumpboxes to webservers",
+            "name": "Allow HTTP traffic from jumpboxes to webservers",
             "properties": {
-              "description": "Allow web traffic from jumpboxes to webservers",
+              "description": "Allow HTTP traffic from jumpboxes to webservers",
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "destinationPortRange": "80",
@@ -141,7 +147,7 @@
               ],
               "destinationApplicationSecurityGroups": [
                 {
-                  "id": "[resourceId('Microsoft.Network/applicationSecurityGroups', 'webservers')]"
+                  "id": "[resourceId('Microsoft.Network/applicationSecurityGroups', 'databaseservers')]"
                 }
               ]
             }
@@ -154,7 +160,7 @@
               "sourcePortRange": "*",
               "destinationPortRange": "*",
               "sourceAddressPrefix": "*",
-              "destinationAddressPrefix": "10.0.1.0/24",
+              "destinationAddressPrefix": "10.0.0.0/24",
               "access": "Deny",
               "priority": 200,
               "direction": "Inbound"
@@ -163,8 +169,8 @@
         ]
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/applicationSecurityGroups', 'jumpboxes')]",
-        "[resourceId('Microsoft.Network/applicationSecurityGroups', 'webservers')]"
+        "[resourceId('Microsoft.Network/applicationSecurityGroups', 'databaseservers')]",
+        "[resourceId('Microsoft.Network/applicationSecurityGroups', 'jumpboxes')]"
       ]
     },
     {
@@ -200,7 +206,7 @@
               "sourcePortRange": "*",
               "destinationPortRange": "80",
               "sourceAddressPrefix": "10.1.0.0/24",
-              "destinationAddressPrefix": "10.0.1.0/24",
+              "destinationAddressPrefix": "10.0.0.0/24",
               "access": "Allow",
               "priority": 100,
               "direction": "Outbound"
@@ -339,7 +345,7 @@
             "name": "webserver1nic1ipconfig1",
             "properties": {
               "privateIPAllocationMethod": "Static",
-              "privateIPAddress": "10.0.1.80",
+              "privateIPAddress": "10.0.0.80",
               "subnet": {
                 "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')).subnets[0].id]"
               },
