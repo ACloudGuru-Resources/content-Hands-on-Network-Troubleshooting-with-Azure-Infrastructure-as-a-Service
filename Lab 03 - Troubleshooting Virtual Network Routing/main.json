@@ -1,0 +1,469 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.9.1.41621",
+      "templateHash": "7366089925336878988"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2019-11-01",
+      "name": "hubvnet",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.0.0.0/16"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "AzureFirewallSubnet",
+            "properties": {
+              "addressPrefix": "10.0.0.0/24",
+              "routeTable": {
+                "id": "[resourceId('Microsoft.Network/routeTables', 'udrAzureFirewallRoute')]"
+              }
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/routeTables', 'udrAzureFirewallRoute')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2019-11-01",
+      "name": "workloadvnet",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.1.0.0/16"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "web-subnet",
+            "properties": {
+              "addressPrefix": "10.1.0.0/24"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks",
+      "apiVersion": "2019-11-01",
+      "name": "jumpboxvnet",
+      "location": "[parameters('location')]",
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "10.2.0.0/16"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "jump-subnet",
+            "properties": {
+              "addressPrefix": "10.2.0.0/24"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2020-07-01",
+      "name": "[format('{0}/peertohub', 'jumpboxvnet')]",
+      "properties": {
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": true,
+        "allowGatewayTransit": false,
+        "useRemoteGateways": false,
+        "remoteVirtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', 'hubvnet')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', 'hubvnet')]",
+        "[resourceId('Microsoft.Network/virtualNetworks', 'jumpboxvnet')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2020-07-01",
+      "name": "[format('{0}/peertojumpbox', 'hubvnet')]",
+      "properties": {
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": true,
+        "allowGatewayTransit": true,
+        "useRemoteGateways": false,
+        "remoteVirtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', 'jumpboxvnet')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', 'hubvnet')]",
+        "[resourceId('Microsoft.Network/virtualNetworks', 'jumpboxvnet')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2020-07-01",
+      "name": "[format('{0}/peertohub', 'workloadvnet')]",
+      "properties": {
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": true,
+        "allowGatewayTransit": false,
+        "useRemoteGateways": false,
+        "remoteVirtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', 'hubvnet')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', 'hubvnet')]",
+        "[resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
+      "apiVersion": "2020-07-01",
+      "name": "[format('{0}/peertoworkload', 'hubvnet')]",
+      "properties": {
+        "allowVirtualNetworkAccess": true,
+        "allowForwardedTraffic": true,
+        "allowGatewayTransit": true,
+        "useRemoteGateways": false,
+        "remoteVirtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', 'hubvnet')]",
+        "[resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/publicIPAddresses",
+      "apiVersion": "2019-11-01",
+      "name": "pipAzureFirewall",
+      "location": "[parameters('location')]",
+      "sku": {
+        "name": "Standard"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Static"
+      }
+    },
+    {
+      "type": "Microsoft.Network/azureFirewalls",
+      "apiVersion": "2020-05-01",
+      "name": "AzureFirewall",
+      "location": "[parameters('location')]",
+      "properties": {
+        "sku": {
+          "name": "AZFW_VNet",
+          "tier": "Standard"
+        },
+        "threatIntelMode": "Alert",
+        "ipConfigurations": [
+          {
+            "name": "AzureFirewallipconfig1",
+            "properties": {
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', 'pipAzureFirewall')]"
+              },
+              "subnet": {
+                "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'hubvnet')).subnets[0].id]"
+              }
+            }
+          }
+        ],
+        "networkRuleCollections": [
+          {
+            "name": "AllowedNetworkRulesCollection",
+            "properties": {
+              "priority": 100,
+              "action": {
+                "type": "Allow"
+              },
+              "rules": [
+                {
+                  "name": "Allow HTTP to web subnet",
+                  "protocols": [
+                    "TCP"
+                  ],
+                  "sourceAddresses": [
+                    "*"
+                  ],
+                  "destinationAddresses": [
+                    "10.1.0.0/24"
+                  ],
+                  "sourceIpGroups": [],
+                  "destinationIpGroups": [],
+                  "destinationFqdns": [],
+                  "destinationPorts": [
+                    "80"
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "natRuleCollections": [
+          {
+            "name": "AllowedDNatRuleCollection",
+            "properties": {
+              "priority": 100,
+              "action": {
+                "type": "Dnat"
+              },
+              "rules": [
+                {
+                  "name": "Forward RDP traffic to jumpbox",
+                  "protocols": [
+                    "TCP"
+                  ],
+                  "translatedAddress": "10.2.0.5",
+                  "translatedPort": "3389",
+                  "sourceAddresses": [
+                    "*"
+                  ],
+                  "sourceIpGroups": [],
+                  "destinationAddresses": [
+                    "[reference(resourceId('Microsoft.Network/publicIPAddresses', 'pipAzureFirewall')).ipAddress]"
+                  ],
+                  "destinationPorts": [
+                    "3389"
+                  ]
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', 'hubvnet')]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', 'pipAzureFirewall')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/routeTables",
+      "apiVersion": "2020-05-01",
+      "name": "udrAzureFirewallRoute",
+      "location": "[parameters('location')]",
+      "properties": {
+        "disableBgpRoutePropagation": false,
+        "routes": [
+          {
+            "name": "DefaultRoute",
+            "properties": {
+              "addressPrefix": "0.0.0.0/0",
+              "nextHopType": "Internet"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-11-01",
+      "name": "jumpbox1nic1",
+      "location": "[parameters('location')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "jumpbox1nic1ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "10.2.0.5",
+              "subnet": {
+                "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'jumpboxvnet')).subnets[0].id]"
+              }
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', 'jumpboxvnet')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2020-12-01",
+      "name": "jumpbox1",
+      "location": "[parameters('location')]",
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_B2s"
+        },
+        "osProfile": {
+          "computerName": "jumpbox1"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "2022-datacenter",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "jumpbox1osdisk",
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', 'jumpbox1nic1')]"
+            }
+          ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": false
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', 'jumpbox1nic1')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2020-12-01",
+      "name": "[format('{0}/{1}', 'jumpbox1', 'jumpbox1-cse')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "autoUpgradeMinorVersion": true,
+        "protectedSettings": {
+          "fileUris": [
+            "https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2003%20-%20Troubleshooting%20Virtual%20Network%20Routing/Initialize-JumpBox1.ps1"
+          ],
+          "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -File Initialize-JumpBox1.ps1"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', 'jumpbox1')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-11-01",
+      "name": "webserver1nic1",
+      "location": "[parameters('location')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "webserver1nic1ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "10.1.0.80",
+              "subnet": {
+                "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')).subnets[0].id]"
+              }
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2020-12-01",
+      "name": "webserver1",
+      "location": "[parameters('location')]",
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_B2s"
+        },
+        "osProfile": {
+          "computerName": "webserver1",
+          "adminUsername": "DoNotUse",
+          "adminPassword": "SuperSecureP@55w0rd"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "2022-datacenter",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "webserver1osdisk",
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', 'webserver1nic1')]"
+            }
+          ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": false
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', 'webserver1nic1')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2020-12-01",
+      "name": "[format('{0}/{1}', 'webserver1', 'webserver1-cse')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "autoUpgradeMinorVersion": true,
+        "protectedSettings": {
+          "fileUris": [
+            "https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2003%20-%20Troubleshooting%20Virtual%20Network%20Routing/Initialize-WebServer.ps1"
+          ],
+          "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer.ps1"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', 'webserver1')]"
+      ]
+    }
+  ],
+  "outputs": {
+    "vmsWithLogin": {
+      "type": "array",
+      "value": [
+        {
+          "name": "jumpbox1",
+          "showPrivateIp": false,
+          "showPublicIp": true,
+          "showFqdn": false
+        }
+      ]
+    }
+  }
+}
