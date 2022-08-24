@@ -312,7 +312,7 @@ resource jumpbox2 'Microsoft.Compute/virtualMachines@2020-12-01' = {
     networkProfile: {
       networkInterfaces: [
         {
-          id: jumpbox1nic1.id
+          id: jumpbox2nic1.id
         }
       ]
     }
@@ -324,20 +324,20 @@ resource jumpbox2 'Microsoft.Compute/virtualMachines@2020-12-01' = {
   }
 }
 
-resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
+resource jumpbox2CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
   parent: jumpbox1
-  name: 'jumpbox1-cse'
+  name: 'jumpbox2-cse'
   location: location
   properties: {
     publisher: 'Microsoft.Compute'
     type: 'CustomScriptExtension'
-    typeHandlerVersion: '1.10'
+    typeHandlerVersion: '2.1'
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
         'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/blob/master/Lab%2004%20-%20Troubleshooting%20Virtual%20Network%20DNS/Initialize-JumpBox1.ps1'
       ]
-      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-JumpBox1.ps1'
+      commandToExecute: 'sh Jumpbox2.sh'
     }
   }
 }
