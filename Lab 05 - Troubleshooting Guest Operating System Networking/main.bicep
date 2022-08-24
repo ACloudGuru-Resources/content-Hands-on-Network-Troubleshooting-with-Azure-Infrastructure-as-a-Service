@@ -246,7 +246,7 @@ resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' =
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
-        'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/blob/master/Lab%2004%20-%20Troubleshooting%20Virtual%20Network%20DNS/Initialize-JumpBox1.ps1'
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2005%20-%20Troubleshooting%20Guest%20Operating%20System%20Networking/Initialize-JumpBox1.ps1'
       ]
       commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-JumpBox1.ps1'
     }
@@ -298,13 +298,13 @@ resource jumpbox2 'Microsoft.Compute/virtualMachines@2020-12-01' = {
     }
     storageProfile: {
       imageReference: {
-        publisher: 'MicrosoftWindowsServer'
-        offer: 'WindowsServer'
-        sku: '2022-datacenter'
+        publisher: 'Canonical'
+        offer: 'UbuntuServer'
+        sku: '18.04-LTS'
         version: 'latest'
       }
       osDisk: {
-        name: 'jumpbox1osdisk'
+        name: 'jumpbox2osdisk'
         caching: 'ReadWrite'
         createOption: 'FromImage'
       }
@@ -324,18 +324,18 @@ resource jumpbox2 'Microsoft.Compute/virtualMachines@2020-12-01' = {
   }
 }
 
-resource jumpbox2CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
-  parent: jumpbox1
+resource jumpbox2CSE 'Microsoft.Compute/virtualMachines/extensions@2019-03-01' = {
+  parent: jumpbox2
   name: 'jumpbox2-cse'
   location: location
   properties: {
-    publisher: 'Microsoft.Compute'
-    type: 'CustomScriptExtension'
+    publisher: 'Microsoft.Azure.Extensions'
+    type: 'CustomScript'
     typeHandlerVersion: '2.1'
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
-        'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/blob/master/Lab%2004%20-%20Troubleshooting%20Virtual%20Network%20DNS/Initialize-JumpBox1.ps1'
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2005%20-%20Troubleshooting%20Guest%20Operating%20System%20Networking/Jumpbox2.sh'
       ]
       commandToExecute: 'sh Jumpbox2.sh'
     }
@@ -413,7 +413,7 @@ resource webserver1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01'
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
-        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2004%20-%20Troubleshooting%20Virtual%20Network%20DNS/Initialize-WebServer.ps1'
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2005%20-%20Troubleshooting%20Guest%20Operating%20System%20Networking/Initialize-WebServer.ps1'
       ]
       commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer.ps1'
     }
