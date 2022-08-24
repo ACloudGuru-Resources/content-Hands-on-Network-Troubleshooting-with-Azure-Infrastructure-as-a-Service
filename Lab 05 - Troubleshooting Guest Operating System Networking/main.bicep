@@ -133,6 +133,20 @@ resource nsgjumpboxvnet 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {
         }
       }
       {
+        name: 'Allow inbound SSH jumpboxes'
+        properties: {
+          description: 'Allow SSH jumpboxes'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          destinationPortRange: '22'
+          destinationAddressPrefix: '10.1.0.0/24'
+          sourceAddressPrefix: '*'
+          access: 'Allow'
+          priority: 110
+          direction: 'Inbound'
+        }
+      }
+      {
         name: 'Allow outbound HTTP from jumpbox subnet to web subnet'
         properties: {
           description: 'Allow outbound HTTP from jumpbox subnet to web subnet'
