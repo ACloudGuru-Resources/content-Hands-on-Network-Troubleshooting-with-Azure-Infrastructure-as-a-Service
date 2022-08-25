@@ -14,6 +14,18 @@ resource workloadvnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
         name: 'web-subnet'
         properties: {
           addressPrefix: '10.0.0.0/24'
+          networkSecurityGroup: {
+            id: nsgdefault.id
+          }
+        }
+      }
+      {
+        name: 'data-subnet'
+        properties: {
+          addressPrefix: '10.0.1.0/24'
+          networkSecurityGroup: {
+            id: nsgdefault.id
+          }
         }
       }
     ]
@@ -35,7 +47,7 @@ resource jumpboxvnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
         properties: {
           addressPrefix: '10.1.0.0/24'
           networkSecurityGroup: {
-            id: nsgjumpboxvnet.id
+            id: nsgdefault.id
           }
         }
       }
@@ -44,7 +56,7 @@ resource jumpboxvnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
 }
 
 resource vnetpeer1 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
-  name: '${workloadvnet.name}/peer1'
+  name: '${workloadvnet.name}/peertojumpboxvnet'
   properties: {
     allowVirtualNetworkAccess: true
     allowForwardedTraffic: false
@@ -57,7 +69,7 @@ resource vnetpeer1 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@202
 }
 
 resource vnetpeer2 'Microsoft.Network/virtualNetworks/virtualNetworkPeerings@2020-07-01' = {
-  name: '${jumpboxvnet.name}/peer1'
+  name: '${jumpboxvnet.name}/peertoworkloadvnet'
   properties: {
     allowVirtualNetworkAccess: true
     allowForwardedTraffic: false
@@ -113,19 +125,19 @@ resource dnsZoneLinkToJumpboxvnet'Microsoft.Network/privateDnsZones/virtualNetwo
   }
 }
 
-resource nsgjumpboxvnet 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {
-  name: 'nsg-jumpboxvnet'
+resource nsgdefault 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {
+  name: 'nsg-default'
   location: location
   properties: {
     securityRules: [
       {
-        name: 'Allow inbound RDP jumpboxes'
+        name: 'Allow inbound RDP from anywhere to jumpbox virtual network'
         properties: {
-          description: 'Allow RDP jumpboxes'
+          description: 'Allow inbound RDP from anywhere to jumpbox virtual network'
           protocol: 'Tcp'
           sourcePortRange: '*'
           destinationPortRange: '3389'
-          destinationAddressPrefix: '10.1.0.0/24'
+          destinationAddressPrefix: '10.1.0.0/16'
           sourceAddressPrefix: '*'
           access: 'Allow'
           priority: 100
@@ -133,31 +145,45 @@ resource nsgjumpboxvnet 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {
         }
       }
       {
-        name: 'Allow outbound HTTP from jumpbox subnet to web subnet'
+        name: 'Allow HTTP traffic from virtual network to web subnet'
         properties: {
-          description: 'Allow outbound HTTP from jumpbox subnet to web subnet'
+          description: 'Allow HTTP traffic from virtual network to web subnet'
           protocol: 'Tcp'
           sourcePortRange: '*'
           destinationPortRange: '80'
-          sourceAddressPrefix: '10.1.0.0/24'
+          sourceAddressPrefix: 'VirtualNetwork'
           destinationAddressPrefix: '10.0.0.0/24'
           access: 'Allow'
-          priority: 100
-          direction: 'Outbound'
+          priority: 150
+          direction: 'Inbound'
         }
       }
       {
-        name: 'Deny outbound from jumpboxvnet to workloadvnet'
+        name: 'Allow SMB traffic from web subnet to data subnet'
         properties: {
-          description: 'Deny outbound from jumpboxvnet to workloadvnet'
+          description: 'Allow SMB traffic from web subnet to data subnet'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          destinationPortRange: '445'
+          sourceAddressPrefix: '10.0.0.0/24'
+          destinationAddressPrefix: '10.0.1.0/24'
+          access: 'Allow'
+          priority: 200
+          direction: 'Inbound'
+        }
+      }
+      {
+        name: 'Deny all inbound to virtual networks'
+        properties: {
+          description: 'Deny all inbound to virtual networks'
           protocol: 'Tcp'
           sourcePortRange: '*'
           destinationPortRange: '*'
-          sourceAddressPrefix: '10.1.0.0/16'
-          destinationAddressPrefix: '10.0.0.0/16'
+          sourceAddressPrefix: '*'
+          destinationAddressPrefix: 'VirtualNetwork'
           access: 'Deny'
-          priority: 200
-          direction: 'Outbound'
+          priority: 4096
+          direction: 'Inbound'
         }
       }
     ]
@@ -246,7 +272,7 @@ resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' =
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
-        'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/blob/master/Lab%2004%20-%20Troubleshooting%20Virtual%20Network%20DNS/Initialize-JumpBox1.ps1'
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2005%20-%20Troubleshooting%20Guest%20Operating%20System%20Networking/Initialize-JumpBox1.ps1'
       ]
       commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-JumpBox1.ps1'
     }
@@ -298,13 +324,13 @@ resource jumpbox2 'Microsoft.Compute/virtualMachines@2020-12-01' = {
     }
     storageProfile: {
       imageReference: {
-        publisher: 'MicrosoftWindowsServer'
-        offer: 'WindowsServer'
-        sku: '2022-datacenter'
+        publisher: 'Canonical'
+        offer: 'UbuntuServer'
+        sku: '18.04-LTS'
         version: 'latest'
       }
       osDisk: {
-        name: 'jumpbox1osdisk'
+        name: 'jumpbox2osdisk'
         caching: 'ReadWrite'
         createOption: 'FromImage'
       }
@@ -312,7 +338,7 @@ resource jumpbox2 'Microsoft.Compute/virtualMachines@2020-12-01' = {
     networkProfile: {
       networkInterfaces: [
         {
-          id: jumpbox1nic1.id
+          id: jumpbox2nic1.id
         }
       ]
     }
@@ -324,20 +350,20 @@ resource jumpbox2 'Microsoft.Compute/virtualMachines@2020-12-01' = {
   }
 }
 
-resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
-  parent: jumpbox1
-  name: 'jumpbox1-cse'
+resource jumpbox2CSE 'Microsoft.Compute/virtualMachines/extensions@2019-03-01' = {
+  parent: jumpbox2
+  name: 'jumpbox2-cse'
   location: location
   properties: {
-    publisher: 'Microsoft.Compute'
-    type: 'CustomScriptExtension'
-    typeHandlerVersion: '1.10'
+    publisher: 'Microsoft.Azure.Extensions'
+    type: 'CustomScript'
+    typeHandlerVersion: '2.1'
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
-        'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/blob/master/Lab%2004%20-%20Troubleshooting%20Virtual%20Network%20DNS/Initialize-JumpBox1.ps1'
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2005%20-%20Troubleshooting%20Guest%20Operating%20System%20Networking/Jumpbox2.sh'
       ]
-      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-JumpBox1.ps1'
+      commandToExecute: 'sh Jumpbox2.sh'
     }
   }
 }
@@ -413,9 +439,85 @@ resource webserver1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01'
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
-        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2004%20-%20Troubleshooting%20Virtual%20Network%20DNS/Initialize-WebServer.ps1'
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2005%20-%20Troubleshooting%20Guest%20Operating%20System%20Networking/Initialize-WebServer.ps1'
       ]
       commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer.ps1'
+    }
+  }
+}
+
+resource fileserver1nic1 'Microsoft.Network/networkInterfaces@2020-11-01' = {
+  name: 'fileserver1nic1'
+  location: location
+  properties: {
+    ipConfigurations: [
+      {
+        name: 'fileserver1nic1ipconfig1'
+        properties: {
+          privateIPAllocationMethod: 'Static'
+          privateIPAddress: '10.0.1.139'
+          subnet: {
+            id: workloadvnet.properties.subnets[1].id
+          }
+        }
+      }
+    ]
+  }
+}
+
+resource fileserver1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
+  name: 'fileserver1'
+  location: location
+  properties: {
+    hardwareProfile: {
+      vmSize: 'Standard_B2s'
+    }
+    osProfile: {
+      computerName: 'fileserver1'
+      adminUsername: 'DoNotUse'
+      adminPassword: 'SuperSecureP@55w0rd'
+    }
+    storageProfile: {
+      imageReference: {
+        publisher: 'MicrosoftWindowsServer'
+        offer: 'WindowsServer'
+        sku: '2022-datacenter'
+        version: 'latest'
+      }
+      osDisk: {
+        name: 'fileserver1osdisk'
+        caching: 'ReadWrite'
+        createOption: 'FromImage'
+      }
+    }
+    networkProfile: {
+      networkInterfaces: [
+        {
+          id: fileserver1nic1.id
+        }
+      ]
+    }
+    diagnosticsProfile: {
+      bootDiagnostics: {
+        enabled: false
+      }
+    }
+  }
+}
+resource fileserver1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
+  parent: fileserver1
+  name: 'fileserver1-cse'
+  location: location
+  properties: {
+    publisher: 'Microsoft.Compute'
+    type: 'CustomScriptExtension'
+    typeHandlerVersion: '1.10'
+    autoUpgradeMinorVersion: true
+    protectedSettings: {
+      fileUris: [
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/Initialize-FileServer1.ps1'
+      ]
+      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-FileServer1.ps1'
     }
   }
 }

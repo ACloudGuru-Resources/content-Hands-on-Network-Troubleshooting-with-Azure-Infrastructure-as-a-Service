@@ -80,22 +80,35 @@ try {
     Add-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "." -value @{ipAddress = '10.1.0.6'; allowed = 'True' }
     Set-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "allowUnlisted" -value "False"
     Set-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "denyAction" -value "Forbidden"
+    #Disable Remote Desktop Firewall Rule
+    Get-NetFirewallRule -Name "*RemoteDesktop*" | Where-Object Enabled -eq True | Set-NetFirewallRule -Enabled False
     #Set DNS Host Header for website
     Set-WebBinding -Name 'Default Web Site' -BindingInformation '*:80:' -PropertyName HostHeader -Value 'escape.lab.vnet'
-    #Disable Remote Desktop Firewall Rule
-    #TODO: Add back after testing
-    #Get-NetFirewallRule -Name "*RemoteDesktop*" | Where-Object Enabled -eq True | Set-NetFirewallRule -Enabled False
     Write-Verbose "END: Secure WebServer"
 }
 catch {
     Write-Verbose "ERROR: Secure WebServer"
     throw $_
 }
-
-#Copy Webserver Content
-Invoke-WebRequest -Uri 'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/raw/master/Lab%2002%20-%20Troubleshooting%20Application%20Security%20Groups/WebApp/WebApp.zip' -OutFile 'C:\temp\WebApp.zip'
-Expand-Archive -Path 'C:\temp\WebApp.zip' -DestinationPath 'C:\inetpub\wwwroot' -Force
-
+ 
+#Set Physical Path and Credentials
+try {
+    #Physical Path
+    Write-Verbose "START: Set Physical Path and Credentials"
+    Set-ItemProperty 'IIS:\Sites\Default Web Site\' -Name physicalPath -Value '\\10.0.1.139\Web'
+    Set-ItemProperty 'IIS:\Sites\Default Web Site\' -Name userName -Value 'DoNotUse'
+    Set-ItemProperty 'IIS:\Sites\Default Web Site\' -Name password -Value 'SuperSecureP@55w0rd'
+    #App Pool
+    Set-ItemProperty IIS:\AppPools\DefaultAppPool -name processModel.identityType -Value SpecificUser
+    Set-ItemProperty IIS:\AppPools\DefaultAppPool -name processModel.userName -Value "DoNotUse"
+    Set-ItemProperty IIS:\AppPools\DefaultAppPool -name processModel.password -Value "SuperSecureP@55w0rd"
+    Write-Verbose "END: Set Physical Path and Credentials"
+}
+catch {
+    Write-Verbose "ERROR: Set Physical Path and Credentials"
+    throw $_
+}
+ 
 #Restart IIS Services
 try {
     Write-Verbose "START: Restart required services"
@@ -106,4 +119,4 @@ try {
 catch {
     Write-Verbose "ERROR: Restart required services"
     throw $_
-} 
+}

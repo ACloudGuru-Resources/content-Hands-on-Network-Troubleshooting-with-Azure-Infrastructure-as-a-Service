@@ -75,7 +75,7 @@ resource dnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
 }
 
 resource ARecord 'Microsoft.Network/privateDnsZones/A@2020-06-01' = {
-  name: 'lab.vnet/escapedoor'
+  name: 'lab.vnet/escape'
   dependsOn: [
     dnsZone
   ]
@@ -437,6 +437,12 @@ resource webserver1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01'
 output vmsWithLogin array  = [
   {
     name: 'jumpbox1'
+    showPrivateIp: false
+    showPublicIp: true
+    showFqdn: false
+  }
+  {
+    name: 'jumpbox2'
     showPrivateIp: false
     showPublicIp: true
     showFqdn: false

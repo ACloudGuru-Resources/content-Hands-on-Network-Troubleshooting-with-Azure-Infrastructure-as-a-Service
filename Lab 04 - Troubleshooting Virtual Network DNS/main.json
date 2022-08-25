@@ -108,7 +108,7 @@
     {
       "type": "Microsoft.Network/privateDnsZones/A",
       "apiVersion": "2020-06-01",
-      "name": "lab.vnet/escapedoor",
+      "name": "lab.vnet/escape",
       "properties": {
         "ttl": 3600,
         "aRecords": [

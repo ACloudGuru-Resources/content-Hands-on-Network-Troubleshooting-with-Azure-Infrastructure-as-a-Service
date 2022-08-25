@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "15994217431320869282"
+      "templateHash": "912668886782219235"
     }
   },
   "parameters": {
@@ -30,11 +30,26 @@
           {
             "name": "web-subnet",
             "properties": {
-              "addressPrefix": "10.0.0.0/24"
+              "addressPrefix": "10.0.0.0/24",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-default')]"
+              }
+            }
+          },
+          {
+            "name": "data-subnet",
+            "properties": {
+              "addressPrefix": "10.0.1.0/24",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-default')]"
+              }
             }
           }
         ]
-      }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-default')]"
+      ]
     },
     {
       "type": "Microsoft.Network/virtualNetworks",
@@ -53,20 +68,20 @@
             "properties": {
               "addressPrefix": "10.1.0.0/24",
               "networkSecurityGroup": {
-                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-jumpboxvnet')]"
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-default')]"
               }
             }
           }
         ]
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-jumpboxvnet')]"
+        "[resourceId('Microsoft.Network/networkSecurityGroups', 'nsg-default')]"
       ]
     },
     {
       "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
       "apiVersion": "2020-07-01",
-      "name": "[format('{0}/peer1', 'workloadvnet')]",
+      "name": "[format('{0}/peertojumpboxvnet', 'workloadvnet')]",
       "properties": {
         "allowVirtualNetworkAccess": true,
         "allowForwardedTraffic": false,
@@ -84,7 +99,7 @@
     {
       "type": "Microsoft.Network/virtualNetworks/virtualNetworkPeerings",
       "apiVersion": "2020-07-01",
-      "name": "[format('{0}/peer1', 'jumpboxvnet')]",
+      "name": "[format('{0}/peertoworkloadvnet', 'jumpboxvnet')]",
       "properties": {
         "allowVirtualNetworkAccess": true,
         "allowForwardedTraffic": false,
@@ -156,18 +171,18 @@
     {
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2019-11-01",
-      "name": "nsg-jumpboxvnet",
+      "name": "nsg-default",
       "location": "[parameters('location')]",
       "properties": {
         "securityRules": [
           {
-            "name": "Allow inbound RDP jumpboxes",
+            "name": "Allow inbound RDP from anywhere to jumpbox virtual network",
             "properties": {
-              "description": "Allow RDP jumpboxes",
+              "description": "Allow inbound RDP from anywhere to jumpbox virtual network",
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "destinationPortRange": "3389",
-              "destinationAddressPrefix": "10.1.0.0/24",
+              "destinationAddressPrefix": "10.1.0.0/16",
               "sourceAddressPrefix": "*",
               "access": "Allow",
               "priority": 100,
@@ -175,31 +190,45 @@
             }
           },
           {
-            "name": "Allow outbound HTTP from jumpbox subnet to web subnet",
+            "name": "Allow HTTP traffic from virtual network to web subnet",
             "properties": {
-              "description": "Allow outbound HTTP from jumpbox subnet to web subnet",
+              "description": "Allow HTTP traffic from virtual network to web subnet",
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "destinationPortRange": "80",
-              "sourceAddressPrefix": "10.1.0.0/24",
+              "sourceAddressPrefix": "VirtualNetwork",
               "destinationAddressPrefix": "10.0.0.0/24",
               "access": "Allow",
-              "priority": 100,
-              "direction": "Outbound"
+              "priority": 150,
+              "direction": "Inbound"
             }
           },
           {
-            "name": "Deny outbound from jumpboxvnet to workloadvnet",
+            "name": "Allow SMB traffic from web subnet to data subnet",
             "properties": {
-              "description": "Deny outbound from jumpboxvnet to workloadvnet",
+              "description": "Allow SMB traffic from web subnet to data subnet",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "445",
+              "sourceAddressPrefix": "10.0.0.0/24",
+              "destinationAddressPrefix": "10.0.1.0/24",
+              "access": "Allow",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "Deny all inbound to virtual networks",
+            "properties": {
+              "description": "Deny all inbound to virtual networks",
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "destinationPortRange": "*",
-              "sourceAddressPrefix": "10.1.0.0/16",
-              "destinationAddressPrefix": "10.0.0.0/16",
+              "sourceAddressPrefix": "*",
+              "destinationAddressPrefix": "VirtualNetwork",
               "access": "Deny",
-              "priority": 200,
-              "direction": "Outbound"
+              "priority": 4096,
+              "direction": "Inbound"
             }
           }
         ]
@@ -495,6 +524,94 @@
       },
       "dependsOn": [
         "[resourceId('Microsoft.Compute/virtualMachines', 'webserver1')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/networkInterfaces",
+      "apiVersion": "2020-11-01",
+      "name": "fileserver1nic1",
+      "location": "[parameters('location')]",
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "fileserver1nic1ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Static",
+              "privateIPAddress": "10.0.1.139",
+              "subnet": {
+                "id": "[reference(resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')).subnets[1].id]"
+              }
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines",
+      "apiVersion": "2020-12-01",
+      "name": "fileserver1",
+      "location": "[parameters('location')]",
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "Standard_B2s"
+        },
+        "osProfile": {
+          "computerName": "fileserver1",
+          "adminUsername": "DoNotUse",
+          "adminPassword": "SuperSecureP@55w0rd"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "MicrosoftWindowsServer",
+            "offer": "WindowsServer",
+            "sku": "2022-datacenter",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "fileserver1osdisk",
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', 'fileserver1nic1')]"
+            }
+          ]
+        },
+        "diagnosticsProfile": {
+          "bootDiagnostics": {
+            "enabled": false
+          }
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkInterfaces', 'fileserver1nic1')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2020-12-01",
+      "name": "[format('{0}/{1}', 'fileserver1', 'fileserver1-cse')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "autoUpgradeMinorVersion": true,
+        "protectedSettings": {
+          "fileUris": [
+            "https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/Initialize-FileServer1.ps1"
+          ],
+          "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -File Initialize-FileServer1.ps1"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', 'fileserver1')]"
       ]
     }
   ],
