@@ -24,7 +24,7 @@ $Trigger = New-ScheduledTaskTrigger -At (Get-Date).AddMinutes(3) -RepetitionInte
 Register-ScheduledTask -TaskName "Remove-CustomScriptExtension WebServer1" -Action $Action -Trigger $Trigger -Description "Clean-up Extensions"
 Start-ScheduledTask -TaskName "Remove-CustomScriptExtension WebServer1"
 
-# WebServer1
+# FileServer1
 $Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-ExecutionPolicy Bypass -File C:\Temp\Remove-CustomScriptExtension.ps1 -VMName FileServer1"
 $Trigger = New-ScheduledTaskTrigger -At (Get-Date).AddMinutes(3) -RepetitionInterval (New-TimeSpan -Minutes 1) 
 Register-ScheduledTask -TaskName "Remove-CustomScriptExtension FileServer1" -Action $Action -Trigger $Trigger -Description "Clean-up Azure Extensions"
