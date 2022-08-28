@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "5797333735475716146"
+      "templateHash": "18446032746377658865"
     }
   },
   "parameters": {
@@ -618,6 +618,27 @@
       "dependsOn": [
         "[resourceId('Microsoft.Network/networkInterfaces', 'fileserver1nic1')]",
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2020-12-01",
+      "name": "[format('{0}/{1}', 'fileserver1', 'fileserver1-cse')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "autoUpgradeMinorVersion": true,
+        "protectedSettings": {
+          "fileUris": [
+            "https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2006%20-%20Troubleshooting%20Azure%20Infrastructure%20as%20a%20Service%20(IaaS)%20Networking/Initialize-FileServer1.ps1"
+          ],
+          "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -File Initialize-FileServer1.ps1"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', 'fileserver1')]"
       ]
     }
   ],
