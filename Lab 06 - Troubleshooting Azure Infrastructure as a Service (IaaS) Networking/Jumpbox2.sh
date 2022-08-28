@@ -13,6 +13,9 @@ sudo service xrdp restart
 sudo apt install firefox -y
 #Disable compositing for improved performance
 xfconf-query -c xfwm4 -p /general/use_compositing -t bool -s false --create
+#Remove wallpapers for performance
+sudo rm /usr/share/backgrounds/xfce/xfce/xfce-blue.jpg
+sudo rm /usr/share/backgrounds/xfce/xfce/xfce-teal.jpg
 #Generate a random number
 rand=$(( ( RANDOM % 10 )  + 1 ))
 if [ $rand -le 4 ]
@@ -26,3 +29,4 @@ then
     sudo iptables -t FILTER -A OUTPUT -p tcp --dport 80 -j REJECT
     sudo iptables save
 fi
+

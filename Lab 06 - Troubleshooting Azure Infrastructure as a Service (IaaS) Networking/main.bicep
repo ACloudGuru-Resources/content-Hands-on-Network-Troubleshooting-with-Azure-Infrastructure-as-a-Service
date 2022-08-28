@@ -272,7 +272,7 @@ resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' =
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
-        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2005%20-%20Troubleshooting%20Guest%20Operating%20System%20Networking/Initialize-JumpBox1.ps1'
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2006%20-%20Troubleshooting%20Azure%20Infrastructure%20as%20a%20Service%20(IaaS)%20Networking/Initialize-JumpBox1.ps1'
       ]
       commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-JumpBox1.ps1'
     }
@@ -361,7 +361,7 @@ resource jumpbox2CSE 'Microsoft.Compute/virtualMachines/extensions@2019-03-01' =
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
-        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2005%20-%20Troubleshooting%20Guest%20Operating%20System%20Networking/Jumpbox2.sh'
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2006%20-%20Troubleshooting%20Azure%20Infrastructure%20as%20a%20Service%20(IaaS)%20Networking/Jumpbox2.sh'
       ]
       commandToExecute: 'sh Jumpbox2.sh'
     }
@@ -439,7 +439,7 @@ resource webserver1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01'
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
-        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2005%20-%20Troubleshooting%20Guest%20Operating%20System%20Networking/Initialize-WebServer.ps1'
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2006%20-%20Troubleshooting%20Azure%20Infrastructure%20as%20a%20Service%20(IaaS)%20Networking/Initialize-WebServer.ps1'
       ]
       commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer.ps1'
     }
@@ -515,7 +515,7 @@ resource fileserver1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
-        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/Initialize-FileServer1.ps1'
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2006%20-%20Troubleshooting%20Azure%20Infrastructure%20as%20a%20Service%20(IaaS)%20Networking/Initialize-FileServer1.ps1'
       ]
       commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-FileServer1.ps1'
     }

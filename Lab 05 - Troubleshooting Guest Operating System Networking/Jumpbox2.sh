@@ -13,5 +13,8 @@ sudo service xrdp restart
 sudo apt install firefox -y
 #Disable compositing for improved performance
 xfconf-query -c xfwm4 -p /general/use_compositing -t bool -s false --create
+#Remove wallpapers for performance
+sudo rm /usr/share/backgrounds/xfce/xfce/xfce-blue.jpg
+sudo rm /usr/share/backgrounds/xfce/xfce/xfce-teal.jpg
 #Add a hosts entry
 echo "192.168.0.1 escape.lab.vnet" | sudo tee -a /etc/hosts
