@@ -1,6 +1,6 @@
 $ErrorActionPreference = "SilentlyContinue"
 if (-not (Get-Item C:\Temp\index.html)) {
-    Invoke-WebRequest -Uri '' -OutFile 'C:\Temp\index.html'
+    Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Shared/index.html' -OutFile 'C:\Temp\index.html'
 }
 Import-Module bitstransfer
 $Username = '.\DoNotUse'
