@@ -40,10 +40,3 @@ Register-ScheduledTask -TaskName "Remove-CustomScriptExtension Jumpbox1" -Action
 $Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-ExecutionPolicy Bypass -File C:\Temp\Remove-CustomScriptExtension.ps1 -VMName Jumpbox2"
 $Trigger = New-ScheduledTaskTrigger -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 1) -Once
 Register-ScheduledTask -TaskName "Remove-CustomScriptExtension Jumpbox2" -Action $Action -Trigger $Trigger -Description "Clean-up Azure Extensions" -RunLevel Highest -User "System"
-
-#Start Scheduled Tasks
-# Start-ScheduledTask -TaskName "Remove-Deployments"
-# Start-ScheduledTask -TaskName "Remove-CustomScriptExtension WebServer1"
-# Start-ScheduledTask -TaskName "Remove-CustomScriptExtension FileServer1"
-# Start-ScheduledTask -TaskName "Remove-CustomScriptExtension Jumpbox1"
-# Start-ScheduledTask -TaskName "Remove-CustomScriptExtension Jumpbox2"

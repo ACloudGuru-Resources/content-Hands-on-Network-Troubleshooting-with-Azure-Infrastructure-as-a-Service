@@ -120,3 +120,15 @@ catch {
     Write-Verbose "ERROR: Restart required services"
     throw $_
 }
+
+#Setup Environment Variables
+try {
+    Write-Verbose "START: Set Environment Variables"
+    Install-Module 'Az.Accounts','Az.Storage' -Force
+    Connect-AzAccount -Identity
+    $env:STORAGE_ACCOUNT = (Get-AzStorageAccount).StorageAccountName
+    Write-Verbose "END: Set Environment Variables"
+} catch {
+    Write-Verbose "ERROR: Set Environment Variables"
+    throw $_
+}

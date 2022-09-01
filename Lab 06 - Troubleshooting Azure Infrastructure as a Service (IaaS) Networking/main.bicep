@@ -6,13 +6,129 @@ resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-
 }
 
 resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
-  name: guid(managedIdentity.id, resourceGroup().id)
+  name: guid(managedIdentity.id, resourceGroup().id, 'b24988ac-6180-42a0-ab88-20f7382dd24c')
   scope: resourceGroup()
   properties: {
     description: 'Managed identity description'
     principalId: managedIdentity.properties.principalId
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')
     principalType: 'ServicePrincipal'
+  }
+}
+
+resource BlobRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  name: guid(managedIdentity.id, resourceGroup().id, 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+  scope: resourceGroup()
+  properties: {
+    description: 'Blob Role Assignment'
+    principalId: managedIdentity.properties.principalId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')
+    principalType: 'ServicePrincipal'
+  }
+}
+resource storageaccount 'Microsoft.Storage/storageAccounts@2021-02-01' = {
+  name: 'name'
+  location: location
+  kind: 'StorageV2'
+  sku: {
+    name: 'Premium_LRS'
+  }
+}
+
+
+resource DeploymentScript 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
+  name: 'DeploymentScript'
+  location: location
+  dependsOn: [
+    vnetpeer1
+    vnetpeer2
+    jumpboxvnet
+    workloadvnet
+    dnsZone
+    ARecord
+    dnsZoneLinkToJumpboxvnet
+    dnsZoneLinkToJumpboxvnet
+  ]
+  kind: 'AzurePowerShell'
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentity.id}': {}
+    }
+  }
+  properties: {
+    forceUpdateTag: '1'
+    azPowerShellVersion: '6.4'
+    scriptContent: '''
+    $RandomNumber = Get-Random -Min 1 -Max 9
+    $ResourceGroup = Get-AzResourceGroup
+    $ResourceGroupName = $ResourceGroup.ResourceGroupName
+    $ResourceGroupLocation = $ResourceGroup.Location
+
+    #Remove a random NSG Rule
+    if ($RandomNumber -gt 5) {
+        $NSG = Get-AzNetworkSecurityGroup -ResourceGroupName $ResourceGroupName 
+        $RandomNSGRule = Get-AzNetworkSecurityRuleConfig -NetworkSecurityGroup $NSG | Where-Object Name -like "*Allow*" | Get-Random
+        if ($RandomNSGRule) {
+            $NSG = Remove-AzNetworkSecurityRuleConfig -Name "$($RandomNSGRule).Name" -NetworkSecurityGroup $NSG
+            $NSG | Set-AzNetworkSecurityGroup
+        }
+    }
+
+    #Change DNS Servers on a Random NIC
+    if ($RandomNumber -gt 2) {
+        $RandomNIC = Get-AzNetworkInterface -ResourceGroup $ResourceGroupName | Get-Random
+        if ($RandomNIC) {
+            $RandomNIC.DNSSettings.DNSServers.Add('1.0.0.1')                                                       
+            $RandomNIC.DNSSettings.DNSServers.Add('1.1.1.1')                                                       
+            Set-AzNetworkInterface -NetworkInterface $RandomNIC  
+        }
+    }
+
+    #Remove the DNS record
+    if ($RandomNumber -lt 4) {
+        if (Get-AzPrivateDnsRecordSet -ResourceGroupName $ResourceGroupName -ZoneName 'lab.vnet' -Name 'escape'-RecordType A) {
+            Remove-AzPrivateDnsRecordSet -ResourceGroupName $ResourceGroupName -ZoneName 'lab.vnet' -Name 'escape' -RecordType A
+        }
+    }
+
+    #Remove a Vnet Peer
+    if ($RandomNumber -gt 3 -and $RandomNumber -lt 8) {
+        $RandomVNet = Get-AzVirtualNetwork | Get-Random
+        if ($RandomVNet) {
+            $RandomPeer = Get-AzVirtualNetworkPeering -VirtualNetworkName "$($RandomVNet.Name)" -ResourceGroupName $ResourceGroupName | Get-Random
+            if ($RandomPeer) {
+                Remove-AzVirtualNetworkPeering -VirtualNetworkName $($RandomPeer.VirtualNetworkName) -Name "$($RandomPeer.Name)" -ResourceGroupName $ResourceGroupName -Force
+            }
+        }
+    }
+
+    #Remove the DNS VNet Link
+    if (($RandomNumber % 2) -eq 1) {
+        $RandomDNSLink = Get-AzPrivateDnsVirtualNetworkLink -ResourceGroupName $ResourceGroupName -ZoneName 'lab.vnet' | Get-Random
+        if ($RandomDNSLink) {
+            Remove-AzPrivateDnsVirtualNetworkLink -ResourceGroupName $ResourceGroupName -ZoneName $RandomDNSLink.ZoneName -Name $RandomDNSLink.Name | Out-Null
+        }
+    }
+
+    #Link a Route Table
+    if (($RandomNumber % 2) -eq 0) {
+        $VirtualNetwork = Get-AzVirtualNetwork -Name "jumpboxvnet"
+        if ($VirtualNetwork) {
+            $Route = New-AzRouteConfig -Name "DenyInternet" -AddressPrefix 0.0.0.0/16 -NextHopType "None"
+            $RouteTable = New-AzRouteTable -Name "DenyInternet" -ResourceGroupName $ResourceGroupName -Location $ResourceGroupLocation -Route $Route
+            Set-AzVirtualNetworkSubnetConfig -Name "$($VirtualNetwork.Subnets[0].Name)" -VirtualNetwork $VirtualNetwork -AddressPrefix "$($VirtualNetwork.Subnets[0].AddressPrefix)" -RouteTable $RouteTable | Out-Null
+        }
+    }
+
+    $output = 'Done'
+    $DeploymentScriptOutputs = @{}
+    $DeploymentScriptOutputs['text'] = $output
+    '''
+    supportingScriptUris: []
+    timeout: 'PT30M'
+    cleanupPreference: 'OnSuccess'
+    retentionInterval: 'PT1H'
   }
 }
 
@@ -157,6 +273,20 @@ resource nsgdefault 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {
           sourceAddressPrefix: '*'
           access: 'Allow'
           priority: 100
+          direction: 'Inbound'
+        }
+      }
+      {
+        name: 'Allow inbound SSH from anywhere to jumpbox virtual network'
+        properties: {
+          description: 'Allow inbound SSH from anywhere to jumpbox virtual network'
+          protocol: 'Tcp'
+          sourcePortRange: '*'
+          destinationPortRange: '22'
+          destinationAddressPrefix: '10.1.0.0/16'
+          sourceAddressPrefix: '*'
+          access: 'Allow'
+          priority: 110
           direction: 'Inbound'
         }
       }
@@ -406,6 +536,15 @@ resource webserver1nic1 'Microsoft.Network/networkInterfaces@2020-11-01' = {
 resource webserver1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
   name: 'webserver1'
   location: location
+  dependsOn: [
+    
+  ]
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentity.id}': {}
+    }
+  }
   properties: {
     hardwareProfile: {
       vmSize: 'Standard_B2s'
