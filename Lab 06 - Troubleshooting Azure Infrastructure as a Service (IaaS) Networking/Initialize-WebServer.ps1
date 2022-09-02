@@ -1,7 +1,6 @@
 #Speed up by disabling progress
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "Stop"
-$VerbosePreference = "Continue"
  
 #Install IIS
 try {

@@ -27,14 +27,13 @@ resource BlobRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-
   }
 }
 resource storageaccount 'Microsoft.Storage/storageAccounts@2021-02-01' = {
-  name: 'name'
+  name: 'st${uniqueString(resourceGroup().id)}'
   location: location
   kind: 'StorageV2'
   sku: {
     name: 'Premium_LRS'
   }
 }
-
 
 resource DeploymentScript 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
   name: 'DeploymentScript'
@@ -48,6 +47,10 @@ resource DeploymentScript 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
     ARecord
     dnsZoneLinkToJumpboxvnet
     dnsZoneLinkToJumpboxvnet
+    jumpbox1CSE
+    webserver1CSE
+    fileserver1CSE
+    jumpbox2CSE
   ]
   kind: 'AzurePowerShell'
   identity: {

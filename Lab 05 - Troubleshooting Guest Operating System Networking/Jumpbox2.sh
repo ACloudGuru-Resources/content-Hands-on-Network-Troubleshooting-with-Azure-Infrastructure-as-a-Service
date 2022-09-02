@@ -12,7 +12,7 @@ sudo service xrdp restart
 #Install firefox
 sudo apt install firefox -y
 #Disable compositing for improved performance
-xfconf-query -c xfwm4 -p /general/use_compositing -t bool -s false --create
+/usr/bin/xfconf-query -c xfwm4 -p /general/use_compositing -s false
 #Remove wallpapers for performance
 sudo rm /usr/share/backgrounds/xfce/xfce/xfce-blue.jpg
 sudo rm /usr/share/backgrounds/xfce/xfce/xfce-teal.jpg

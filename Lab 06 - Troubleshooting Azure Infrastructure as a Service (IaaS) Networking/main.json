@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "18335953440990541882"
+      "templateHash": "10885574943491694837"
     }
   },
   "parameters": {
@@ -52,7 +52,7 @@
     {
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2021-02-01",
-      "name": "name",
+      "name": "[format('st{0}', uniqueString(resourceGroup().id))]",
       "location": "[parameters('location')]",
       "kind": "StorageV2",
       "sku": {
@@ -84,10 +84,14 @@
         "[resourceId('Microsoft.Network/privateDnsZones/A', split('lab.vnet/escape', '/')[0], split('lab.vnet/escape', '/')[1])]",
         "[resourceId('Microsoft.Network/privateDnsZones', 'lab.vnet')]",
         "[resourceId('Microsoft.Network/privateDnsZones/virtualNetworkLinks', 'lab.vnet', 'jumpboxvnet')]",
+        "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'fileserver1', 'fileserver1-cse')]",
+        "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'jumpbox1', 'jumpbox1-cse')]",
+        "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'jumpbox2', 'jumpbox2-cse')]",
         "[resourceId('Microsoft.Network/virtualNetworks', 'jumpboxvnet')]",
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')]",
         "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', split(format('{0}/peertojumpboxvnet', 'workloadvnet'), '/')[0], split(format('{0}/peertojumpboxvnet', 'workloadvnet'), '/')[1])]",
         "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', split(format('{0}/peertoworkloadvnet', 'jumpboxvnet'), '/')[0], split(format('{0}/peertoworkloadvnet', 'jumpboxvnet'), '/')[1])]",
+        "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'webserver1', 'webserver1-cse')]",
         "[resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')]"
       ]
     },

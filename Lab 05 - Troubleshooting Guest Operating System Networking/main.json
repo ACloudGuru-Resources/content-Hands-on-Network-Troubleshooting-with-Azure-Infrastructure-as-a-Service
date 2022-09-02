@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "15994217431320869282"
+      "templateHash": "13667420475553650477"
     }
   },
   "parameters": {
@@ -171,6 +171,20 @@
               "sourceAddressPrefix": "*",
               "access": "Allow",
               "priority": 100,
+              "direction": "Inbound"
+            }
+          },
+          {
+            "name": "Allow inbound SSH jumpboxes",
+            "properties": {
+              "description": "Allow SSH jumpboxes",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "22",
+              "destinationAddressPrefix": "10.1.0.0/24",
+              "sourceAddressPrefix": "*",
+              "access": "Allow",
+              "priority": 110,
               "direction": "Inbound"
             }
           },
@@ -504,6 +518,12 @@
       "value": [
         {
           "name": "jumpbox1",
+          "showPrivateIp": false,
+          "showPublicIp": true,
+          "showFqdn": false
+        },
+        {
+          "name": "jumpbox2",
           "showPrivateIp": false,
           "showPublicIp": true,
           "showFqdn": false

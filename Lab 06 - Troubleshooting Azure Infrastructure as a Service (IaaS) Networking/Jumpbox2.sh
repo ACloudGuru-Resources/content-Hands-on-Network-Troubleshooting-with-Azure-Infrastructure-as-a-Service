@@ -29,4 +29,3 @@ then
     sudo iptables -t FILTER -A OUTPUT -p tcp --dport 80 -j REJECT
     sudo iptables save
 fi
-
