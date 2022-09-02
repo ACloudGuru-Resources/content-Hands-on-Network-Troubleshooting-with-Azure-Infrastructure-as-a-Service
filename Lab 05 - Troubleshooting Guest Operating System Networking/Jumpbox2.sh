@@ -11,10 +11,11 @@ echo xfce4-session >~/.xsession
 sudo service xrdp restart
 #Install firefox
 sudo apt install firefox -y
-#Disable compositing for improved performance
-/usr/bin/xfconf-query -c xfwm4 -p /general/use_compositing -s false
-#Remove wallpapers for performance
-sudo rm /usr/share/backgrounds/xfce/xfce/xfce-blue.jpg
-sudo rm /usr/share/backgrounds/xfce/xfce/xfce-teal.jpg
+#Improve performance
+echo 'cp /etc/xdg/xfce4/panel/default.xml ~/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-panel.xml' | sudo tee -a /etc/profile
+echo '/usr/bin/xfconf-query -c xfwm4 -p /general/use_compositing -s false' | sudo tee -a /etc/profile
+echo 'sudo rm /usr/share/backgrounds/xfce/xfce/xfce-blue.jpg' | sudo tee -a /etc/profile
+echo 'sudo rm /usr/share/backgrounds/xfce/xfce/xfce-teal.jpg' | sudo tee -a /etc/profile
+
 #Add a hosts entry
 echo "192.168.0.1 escape.lab.vnet" | sudo tee -a /etc/hosts
