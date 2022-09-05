@@ -1,8 +1,20 @@
 param location string = resourceGroup().location
 
-// Make jumpbox not annoying, server manager, edge, open edge to website 10.0.1.80
-//AS PS from ps1 files
-//Blazor app deployed to FS1
+resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
+  name: 'ManagedIdentity'
+  location: location
+}
+
+resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  name: guid(managedIdentity.id, resourceGroup().id, 'b24988ac-6180-42a0-ab88-20f7382dd24c')
+  scope: resourceGroup()
+  properties: {
+    description: 'Managed identity description'
+    principalId: managedIdentity.properties.principalId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')
+    principalType: 'ServicePrincipal'
+  }
+}
 
 resource vnet1 'Microsoft.Network/virtualNetworks@2019-11-01' = {
   name: 'vnet1'
@@ -358,6 +370,12 @@ resource nsgfileserver1nic1 'Microsoft.Network/networkSecurityGroups@2019-11-01'
 resource fileserver1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
   name: 'fileserver1'
   location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentity.id}': {}
+    }
+  }
   properties: {
     hardwareProfile: {
       vmSize: 'Standard_B2s'
