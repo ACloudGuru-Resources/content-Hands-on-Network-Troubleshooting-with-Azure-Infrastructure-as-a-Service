@@ -7,8 +7,11 @@ Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies
 New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft" -Name "Edge"
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -Name 'HideFirstRunExperience' -Value 1
 Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -Name "HomepageLocation" -Value "http://10.0.1.80"
-Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -Name "RestoreOnStartupURLs" -Value "http://10.0.1.80"
-Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -Name "RestoreOnStartup" -Value 4
+Set-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -Name "RestoreOnStartup" -Value 4 -Type "DWORD"
+New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -Name "Recommended"
+New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge\Recommended\RestoreOnStartupURLs" -Name "1" -Value "http://10.0.1.80"
+New-Item -Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -Name "RestoreOnStartupURLs"
+New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge\RestoreOnStartupURLs" -Name "1" -Value "http://10.0.1.80"
 
 #Set Scheduled Tasks
 # Deploy Virus

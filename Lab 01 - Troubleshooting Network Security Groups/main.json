@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "9207437786655372814"
+      "templateHash": "426549557629116724"
     }
   },
   "parameters": {
@@ -193,7 +193,7 @@
       "properties": {
         "securityRules": [
           {
-            "name": "AllowRDP",
+            "name": "Allow Remote Desktop to jumpbox1",
             "properties": {
               "description": "Allow Remote Desktop to jumpbox1",
               "protocol": "Tcp",
@@ -357,7 +357,6 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'fileserver1', 'fileserver1-cse')]",
         "[resourceId('Microsoft.Compute/virtualMachines', 'webserver1')]"
       ]
     },
