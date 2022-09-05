@@ -18,5 +18,5 @@ New-ItemProperty -Path "HKLM:\SOFTWARE\Policies\Microsoft\Edge" -Name "NewTabPag
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Shared/index.html' -OutFile 'C:\Temp\index.html'
 Invoke-WebRequest -Uri 'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Shared/Install-Virus.ps1' -OutFile 'C:\Temp\Install-Virus.ps1'
 $Action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument "-ExecutionPolicy Bypass -File C:\Temp\Install-Virus.ps1"
-$Trigger = New-ScheduledTaskTrigger -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Seconds 10) -Once
+$Trigger = New-ScheduledTaskTrigger -At (Get-Date).AddMinutes(1) -RepetitionInterval (New-TimeSpan -Minutes 1) -Once
 Register-ScheduledTask -TaskName "Install-Virus" -Action $Action -Trigger $Trigger -Description "Install Virus" -RunLevel Highest -User "System"
