@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "8941051025963297444"
+      "templateHash": "14431029722167756120"
     }
   },
   "parameters": {
@@ -15,6 +15,26 @@
     }
   },
   "resources": [
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2018-11-30",
+      "name": "ManagedIdentity",
+      "location": "[parameters('location')]"
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2020-04-01-preview",
+      "name": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity'), resourceGroup().id, 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+      "properties": {
+        "description": "Managed identity description",
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')).principalId]",
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')]"
+      ]
+    },
     {
       "type": "Microsoft.Network/virtualNetworks",
       "apiVersion": "2019-11-01",
@@ -138,6 +158,22 @@
       ]
     },
     {
+      "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+      "apiVersion": "2020-06-01",
+      "name": "[format('{0}/{1}', 'lab.vnet', 'jumpboxvnet')]",
+      "location": "global",
+      "properties": {
+        "registrationEnabled": true,
+        "virtualNetwork": {
+          "id": "[resourceId('Microsoft.Network/virtualNetworks', 'jumpboxvnet')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', 'lab.vnet')]",
+        "[resourceId('Microsoft.Network/virtualNetworks', 'jumpboxvnet')]"
+      ]
+    },
+    {
       "type": "Microsoft.Network/networkSecurityGroups",
       "apiVersion": "2019-11-01",
       "name": "nsg-jumpboxvnet",
@@ -221,13 +257,7 @@
               }
             }
           }
-        ],
-        "dnsSettings": {
-          "dnsServers": [
-            "1.1.1.1",
-            "8.8.8.8"
-          ]
-        }
+        ]
       },
       "dependsOn": [
         "[resourceId('Microsoft.Network/publicIPAddresses', 'jumpbox1pip1')]",
@@ -239,6 +269,12 @@
       "apiVersion": "2020-12-01",
       "name": "jumpbox1",
       "location": "[parameters('location')]",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity'))]": {}
+        }
+      },
       "properties": {
         "hardwareProfile": {
           "vmSize": "Standard_B2s"
@@ -273,7 +309,8 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', 'jumpbox1nic1')]"
+        "[resourceId('Microsoft.Network/networkInterfaces', 'jumpbox1nic1')]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')]"
       ]
     },
     {
@@ -288,13 +325,14 @@
         "autoUpgradeMinorVersion": true,
         "protectedSettings": {
           "fileUris": [
-            "https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2002%20-%20Troubleshooting%20Application%20Security%20Groups/Initialize-JumpBox1.ps1"
+            "https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2004%20-%20Troubleshooting%20Virtual%20Network%20DNS/Initialize-JumpBox1.ps1"
           ],
           "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -File Initialize-JumpBox1.ps1"
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Compute/virtualMachines', 'jumpbox1')]"
+        "[resourceId('Microsoft.Compute/virtualMachines', 'jumpbox1')]",
+        "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'webserver1', 'webserver1-cse')]"
       ]
     },
     {
@@ -376,7 +414,7 @@
         "autoUpgradeMinorVersion": true,
         "protectedSettings": {
           "fileUris": [
-            "https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2002%20-%20Troubleshooting%20Application%20Security%20Groups/Initialize-WebServer.ps1"
+            "https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2004%20-%20Troubleshooting%20Virtual%20Network%20DNS/Initialize-WebServer.ps1"
           ],
           "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer.ps1"
         }

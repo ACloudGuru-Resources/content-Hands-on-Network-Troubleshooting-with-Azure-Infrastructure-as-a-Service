@@ -1,5 +1,21 @@
 param location string = resourceGroup().location
 
+resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
+  name: 'ManagedIdentity'
+  location: location
+}
+
+resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  name: guid(managedIdentity.id, resourceGroup().id, 'b24988ac-6180-42a0-ab88-20f7382dd24c')
+  scope: resourceGroup()
+  properties: {
+    description: 'Managed identity description'
+    principalId: managedIdentity.properties.principalId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')
+    principalType: 'ServicePrincipal'
+  }
+}
+
 resource workloadvnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
   name: 'workloadvnet'
   location: location
@@ -200,6 +216,12 @@ resource jumpbox1nic1 'Microsoft.Network/networkInterfaces@2020-11-01' = {
 resource jumpbox1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
   name: 'jumpbox1'
   location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentity.id}': {}
+    }
+  }
   properties: {
     hardwareProfile: {
       vmSize: 'Standard_B2s'
@@ -238,6 +260,9 @@ resource jumpbox1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
 resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
   parent: jumpbox1
   name: 'jumpbox1-cse'
+  dependsOn: [
+    webserver1CSE
+  ]
   location: location
   properties: {
     publisher: 'Microsoft.Compute'
@@ -246,96 +271,7 @@ resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' =
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
-        'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/blob/master/Lab%2004%20-%20Troubleshooting%20Virtual%20Network%20DNS/Initialize-JumpBox1.ps1'
-      ]
-      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-JumpBox1.ps1'
-    }
-  }
-}
-
-resource jumpbox2pip 'Microsoft.Network/publicIPAddresses@2019-11-01' = {
-  name: 'jumpbox2pip1'
-  sku: {
-    name: 'Standard'
-  }
-  location: location
-  properties: {
-    publicIPAllocationMethod: 'Static'
-  }
-}
-
-resource jumpbox2nic1 'Microsoft.Network/networkInterfaces@2020-11-01' = {
-  name: 'jumpbox2nic1'
-  location: location
-  properties: {
-    ipConfigurations: [
-      {
-        name: 'jumpbox1nic1ipconfig1'
-        properties: {
-          privateIPAllocationMethod: 'Static'
-          privateIPAddress: '10.1.0.6'
-          publicIPAddress: {
-            id: jumpbox2pip.id
-          }
-          subnet: {
-            id: jumpboxvnet.properties.subnets[0].id
-          }
-        }
-      }
-    ]
-  }
-}
-
-resource jumpbox2 'Microsoft.Compute/virtualMachines@2020-12-01' = {
-  name: 'jumpbox2'
-  location: location
-  properties: {
-    hardwareProfile: {
-      vmSize: 'Standard_B2s'
-    }
-    osProfile: {
-      computerName: 'jumpbox2'
-    }
-    storageProfile: {
-      imageReference: {
-        publisher: 'MicrosoftWindowsServer'
-        offer: 'WindowsServer'
-        sku: '2022-datacenter'
-        version: 'latest'
-      }
-      osDisk: {
-        name: 'jumpbox1osdisk'
-        caching: 'ReadWrite'
-        createOption: 'FromImage'
-      }
-    }
-    networkProfile: {
-      networkInterfaces: [
-        {
-          id: jumpbox1nic1.id
-        }
-      ]
-    }
-    diagnosticsProfile: {
-      bootDiagnostics: {
-        enabled: false
-      }
-    }
-  }
-}
-
-resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
-  parent: jumpbox1
-  name: 'jumpbox1-cse'
-  location: location
-  properties: {
-    publisher: 'Microsoft.Compute'
-    type: 'CustomScriptExtension'
-    typeHandlerVersion: '1.10'
-    autoUpgradeMinorVersion: true
-    protectedSettings: {
-      fileUris: [
-        'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/blob/master/Lab%2004%20-%20Troubleshooting%20Virtual%20Network%20DNS/Initialize-JumpBox1.ps1'
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2004%20-%20Troubleshooting%20Virtual%20Network%20DNS/Initialize-JumpBox1.ps1'
       ]
       commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-JumpBox1.ps1'
     }

@@ -283,6 +283,9 @@ resource jumpbox1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
 resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
   parent: jumpbox1
   name: 'jumpbox1-cse'
+  dependsOn: [
+    webserver1CSE
+  ]
   location: location
   properties: {
     publisher: 'Microsoft.Compute'

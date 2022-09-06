@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "15271486414975518096"
+      "templateHash": "3441542563189657409"
     }
   },
   "parameters": {
@@ -358,7 +358,8 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Compute/virtualMachines', 'jumpbox1')]"
+        "[resourceId('Microsoft.Compute/virtualMachines', 'jumpbox1')]",
+        "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'webserver1', 'webserver1-cse')]"
       ]
     },
     {

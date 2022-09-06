@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "7366089925336878988"
+      "templateHash": "4982563602539154877"
     }
   },
   "parameters": {
@@ -15,6 +15,26 @@
     }
   },
   "resources": [
+    {
+      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "apiVersion": "2018-11-30",
+      "name": "ManagedIdentity",
+      "location": "[parameters('location')]"
+    },
+    {
+      "type": "Microsoft.Authorization/roleAssignments",
+      "apiVersion": "2020-04-01-preview",
+      "name": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity'), resourceGroup().id, 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+      "properties": {
+        "description": "Managed identity description",
+        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')).principalId]",
+        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
+        "principalType": "ServicePrincipal"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')]"
+      ]
+    },
     {
       "type": "Microsoft.Network/virtualNetworks",
       "apiVersion": "2019-11-01",
@@ -90,7 +110,7 @@
       "name": "[format('{0}/peertohub', 'jumpboxvnet')]",
       "properties": {
         "allowVirtualNetworkAccess": true,
-        "allowForwardedTraffic": true,
+        "allowForwardedTraffic": false,
         "allowGatewayTransit": false,
         "useRemoteGateways": false,
         "remoteVirtualNetwork": {
@@ -126,7 +146,7 @@
       "name": "[format('{0}/peertohub', 'workloadvnet')]",
       "properties": {
         "allowVirtualNetworkAccess": true,
-        "allowForwardedTraffic": true,
+        "allowForwardedTraffic": false,
         "allowGatewayTransit": false,
         "useRemoteGateways": false,
         "remoteVirtualNetwork": {
@@ -306,6 +326,12 @@
       "apiVersion": "2020-12-01",
       "name": "jumpbox1",
       "location": "[parameters('location')]",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity'))]": {}
+        }
+      },
       "properties": {
         "hardwareProfile": {
           "vmSize": "Standard_B2s"
@@ -340,7 +366,8 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', 'jumpbox1nic1')]"
+        "[resourceId('Microsoft.Network/networkInterfaces', 'jumpbox1nic1')]",
+        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')]"
       ]
     },
     {
@@ -361,7 +388,8 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Compute/virtualMachines', 'jumpbox1')]"
+        "[resourceId('Microsoft.Compute/virtualMachines', 'jumpbox1')]",
+        "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'webserver1', 'webserver1-cse')]"
       ]
     },
     {

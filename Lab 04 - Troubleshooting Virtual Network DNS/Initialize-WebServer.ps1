@@ -82,8 +82,7 @@ try {
     #Set DNS Host Header for website
     Set-WebBinding -Name 'Default Web Site' -BindingInformation '*:80:' -PropertyName HostHeader -Value 'escape.lab.vnet'
     #Disable Remote Desktop Firewall Rule
-    #TODO: Add back after testing
-    #Get-NetFirewallRule -Name "*RemoteDesktop*" | Where-Object Enabled -eq True | Set-NetFirewallRule -Enabled False
+    Get-NetFirewallRule -Name "*RemoteDesktop*" | Where-Object Enabled -eq True | Set-NetFirewallRule -Enabled False
     Write-Verbose "END: Secure WebServer"
 }
 catch {
@@ -106,3 +105,6 @@ catch {
     Write-Verbose "ERROR: Restart required services"
     throw $_
 } 
+
+# Enable SMB-In
+Get-NetFirewallRule -Name "FPS-SMB-In-TCP" | Set-NetFirewallRule -Enabled True 
