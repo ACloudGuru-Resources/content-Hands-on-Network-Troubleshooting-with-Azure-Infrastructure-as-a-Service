@@ -1,5 +1,21 @@
 param location string = resourceGroup().location
 
+resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
+  name: 'ManagedIdentity'
+  location: location
+}
+
+resource roleAssignment 'Microsoft.Authorization/roleAssignments@2020-04-01-preview' = {
+  name: guid(managedIdentity.id, resourceGroup().id, 'b24988ac-6180-42a0-ab88-20f7382dd24c')
+  scope: resourceGroup()
+  properties: {
+    description: 'Managed identity description'
+    principalId: managedIdentity.properties.principalId
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')
+    principalType: 'ServicePrincipal'
+  }
+}
+
 resource hubvnet 'Microsoft.Network/virtualNetworks@2019-11-01' = {
   name: 'hubvnet'
   location: location
@@ -252,6 +268,12 @@ resource jumpbox1nic1 'Microsoft.Network/networkInterfaces@2020-11-01' = {
 resource jumpbox1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
   name: 'jumpbox1'
   location: location
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentity.id}': {}
+    }
+  }
   properties: {
     hardwareProfile: {
       vmSize: 'Standard_B2s'
