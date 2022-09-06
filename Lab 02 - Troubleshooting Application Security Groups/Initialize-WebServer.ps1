@@ -103,3 +103,6 @@ catch {
     Write-Verbose "ERROR: Restart required services"
     throw $_
 } 
+
+# Enable SMB-In
+Get-NetFirewallRule -Name "FPS-SMB-In-TCP" | Set-NetFirewallRule -Enabled True 

@@ -313,7 +313,7 @@ resource webserver1nic1 'Microsoft.Network/networkInterfaces@2020-11-01' = {
           }
           applicationSecurityGroups: [
             {
-              id: asgwebservers.id
+              id: asgdatabaseservers.id
             }
           ]
         }

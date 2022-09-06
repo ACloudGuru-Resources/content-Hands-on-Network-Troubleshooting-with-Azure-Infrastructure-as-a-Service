@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "14886930823477643028"
+      "templateHash": "15271486414975518096"
     }
   },
   "parameters": {
@@ -378,7 +378,7 @@
               },
               "applicationSecurityGroups": [
                 {
-                  "id": "[resourceId('Microsoft.Network/applicationSecurityGroups', 'webservers')]"
+                  "id": "[resourceId('Microsoft.Network/applicationSecurityGroups', 'databaseservers')]"
                 }
               ]
             }
@@ -386,7 +386,7 @@
         ]
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/applicationSecurityGroups', 'webservers')]",
+        "[resourceId('Microsoft.Network/applicationSecurityGroups', 'databaseservers')]",
         "[resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')]"
       ]
     },
