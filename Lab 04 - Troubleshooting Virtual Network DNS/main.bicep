@@ -1,5 +1,7 @@
 param location string = resourceGroup().location
 
+var broken = false
+
 resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
   name: 'ManagedIdentity'
   location: location
@@ -99,7 +101,7 @@ resource ARecord 'Microsoft.Network/privateDnsZones/A@2020-06-01' = {
     ttl: 3600
     aRecords: [
       {
-        ipv4Address: '10.0.0.80'
+        ipv4Address: broken ? '10.0.0.81' : '10.0.0.80'
       }
     ]
   }
@@ -117,7 +119,7 @@ resource dnsZoneLinkToWorkloadvnet'Microsoft.Network/privateDnsZones/virtualNetw
   }
 }
 
-resource dnsZoneLinkToJumpboxvnet'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+resource dnsZoneLinkToJumpboxvnet'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = if(broken==false) {
   name: 'jumpboxvnet'
   parent: dnsZone
   location: 'global'

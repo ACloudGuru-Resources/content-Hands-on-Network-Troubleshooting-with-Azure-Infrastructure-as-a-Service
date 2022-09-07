@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "14431029722167756120"
+      "templateHash": "12152629211284076023"
     }
   },
   "parameters": {
@@ -13,6 +13,9 @@
       "type": "string",
       "defaultValue": "[resourceGroup().location]"
     }
+  },
+  "variables": {
+    "broken": false
   },
   "resources": [
     {
@@ -133,7 +136,7 @@
         "ttl": 3600,
         "aRecords": [
           {
-            "ipv4Address": "10.0.0.80"
+            "ipv4Address": "[if(variables('broken'), '10.0.0.81', '10.0.0.80')]"
           }
         ]
       },
@@ -158,6 +161,7 @@
       ]
     },
     {
+      "condition": "[equals(variables('broken'), false())]",
       "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
       "apiVersion": "2020-06-01",
       "name": "[format('{0}/{1}', 'lab.vnet', 'jumpboxvnet')]",
