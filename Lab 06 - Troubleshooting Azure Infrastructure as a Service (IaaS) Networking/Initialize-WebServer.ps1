@@ -123,6 +123,7 @@ catch {
 #Setup Environment Variables
 try {
     Write-Verbose "START: Set Environment Variables"
+    Install-PackageProvider -Name 'Nuget' -MinimumVersion 2.8.5.201 -Force
     Install-Module 'Az.Accounts','Az.Storage' -Force
     Connect-AzAccount -Identity
     $env:STORAGE_ACCOUNT = (Get-AzStorageAccount).StorageAccountName

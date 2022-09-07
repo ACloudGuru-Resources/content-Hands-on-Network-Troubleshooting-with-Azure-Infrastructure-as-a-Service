@@ -60,42 +60,6 @@
       }
     },
     {
-      "type": "Microsoft.Resources/deploymentScripts",
-      "apiVersion": "2020-10-01",
-      "name": "DeploymentScript",
-      "location": "[parameters('location')]",
-      "kind": "AzurePowerShell",
-      "identity": {
-        "type": "UserAssigned",
-        "userAssignedIdentities": {
-          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity'))]": {}
-        }
-      },
-      "properties": {
-        "forceUpdateTag": "1",
-        "azPowerShellVersion": "6.4",
-        "scriptContent": "    $RandomNumber = Get-Random -Min 1 -Max 9\n    $ResourceGroup = Get-AzResourceGroup\n    $ResourceGroupName = $ResourceGroup.ResourceGroupName\n    $ResourceGroupLocation = $ResourceGroup.Location\n\n    #Remove a random NSG Rule\n    if ($RandomNumber -gt 5) {\n        $NSG = Get-AzNetworkSecurityGroup -ResourceGroupName $ResourceGroupName \n        $RandomNSGRule = Get-AzNetworkSecurityRuleConfig -NetworkSecurityGroup $NSG | Where-Object Name -like \"*Allow*\" | Get-Random\n        if ($RandomNSGRule) {\n            $NSG = Remove-AzNetworkSecurityRuleConfig -Name \"$($RandomNSGRule).Name\" -NetworkSecurityGroup $NSG\n            $NSG | Set-AzNetworkSecurityGroup\n        }\n    }\n\n    #Change DNS Servers on a Random NIC\n    if ($RandomNumber -gt 2) {\n        $RandomNIC = Get-AzNetworkInterface -ResourceGroup $ResourceGroupName | Get-Random\n        if ($RandomNIC) {\n            $RandomNIC.DNSSettings.DNSServers.Add('1.0.0.1')                                                       \n            $RandomNIC.DNSSettings.DNSServers.Add('1.1.1.1')                                                       \n            Set-AzNetworkInterface -NetworkInterface $RandomNIC  \n        }\n    }\n\n    #Remove the DNS record\n    if ($RandomNumber -lt 4) {\n        if (Get-AzPrivateDnsRecordSet -ResourceGroupName $ResourceGroupName -ZoneName 'lab.vnet' -Name 'escape'-RecordType A) {\n            Remove-AzPrivateDnsRecordSet -ResourceGroupName $ResourceGroupName -ZoneName 'lab.vnet' -Name 'escape' -RecordType A\n        }\n    }\n\n    #Remove a Vnet Peer\n    if ($RandomNumber -gt 3 -and $RandomNumber -lt 8) {\n        $RandomVNet = Get-AzVirtualNetwork | Get-Random\n        if ($RandomVNet) {\n            $RandomPeer = Get-AzVirtualNetworkPeering -VirtualNetworkName \"$($RandomVNet.Name)\" -ResourceGroupName $ResourceGroupName | Get-Random\n            if ($RandomPeer) {\n                Remove-AzVirtualNetworkPeering -VirtualNetworkName $($RandomPeer.VirtualNetworkName) -Name \"$($RandomPeer.Name)\" -ResourceGroupName $ResourceGroupName -Force\n            }\n        }\n    }\n\n    #Remove the DNS VNet Link\n    if (($RandomNumber % 2) -eq 1) {\n        $RandomDNSLink = Get-AzPrivateDnsVirtualNetworkLink -ResourceGroupName $ResourceGroupName -ZoneName 'lab.vnet' | Get-Random\n        if ($RandomDNSLink) {\n            Remove-AzPrivateDnsVirtualNetworkLink -ResourceGroupName $ResourceGroupName -ZoneName $RandomDNSLink.ZoneName -Name $RandomDNSLink.Name | Out-Null\n        }\n    }\n\n    #Link a Route Table\n    if (($RandomNumber % 2) -eq 0) {\n        $VirtualNetwork = Get-AzVirtualNetwork -Name \"jumpboxvnet\"\n        if ($VirtualNetwork) {\n            $Route = New-AzRouteConfig -Name \"DenyInternet\" -AddressPrefix 0.0.0.0/16 -NextHopType \"None\"\n            $RouteTable = New-AzRouteTable -Name \"DenyInternet\" -ResourceGroupName $ResourceGroupName -Location $ResourceGroupLocation -Route $Route\n            Set-AzVirtualNetworkSubnetConfig -Name \"$($VirtualNetwork.Subnets[0].Name)\" -VirtualNetwork $VirtualNetwork -AddressPrefix \"$($VirtualNetwork.Subnets[0].AddressPrefix)\" -RouteTable $RouteTable | Out-Null\n        }\n    }\n\n    $output = 'Done'\n    $DeploymentScriptOutputs = @{}\n    $DeploymentScriptOutputs['text'] = $output\n    ",
-        "supportingScriptUris": [],
-        "timeout": "PT30M",
-        "cleanupPreference": "OnSuccess",
-        "retentionInterval": "PT1H"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Network/privateDnsZones/A', split('lab.vnet/escape', '/')[0], split('lab.vnet/escape', '/')[1])]",
-        "[resourceId('Microsoft.Network/privateDnsZones', 'lab.vnet')]",
-        "[resourceId('Microsoft.Network/privateDnsZones/virtualNetworkLinks', 'lab.vnet', 'jumpboxvnet')]",
-        "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'fileserver1', 'fileserver1-cse')]",
-        "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'jumpbox1', 'jumpbox1-cse')]",
-        "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'jumpbox2', 'jumpbox2-cse')]",
-        "[resourceId('Microsoft.Network/virtualNetworks', 'jumpboxvnet')]",
-        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')]",
-        "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', split(format('{0}/peertojumpboxvnet', 'workloadvnet'), '/')[0], split(format('{0}/peertojumpboxvnet', 'workloadvnet'), '/')[1])]",
-        "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', split(format('{0}/peertoworkloadvnet', 'jumpboxvnet'), '/')[0], split(format('{0}/peertoworkloadvnet', 'jumpboxvnet'), '/')[1])]",
-        "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'webserver1', 'webserver1-cse')]",
-        "[resourceId('Microsoft.Network/virtualNetworks', 'workloadvnet')]"
-      ]
-    },
-    {
       "type": "Microsoft.Network/virtualNetworks",
       "apiVersion": "2019-11-01",
       "name": "workloadvnet",
@@ -604,27 +568,6 @@
       "dependsOn": [
         "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')]",
         "[resourceId('Microsoft.Network/networkInterfaces', 'webserver1nic1')]"
-      ]
-    },
-    {
-      "type": "Microsoft.Compute/virtualMachines/extensions",
-      "apiVersion": "2020-12-01",
-      "name": "[format('{0}/{1}', 'webserver1', 'webserver1-cse')]",
-      "location": "[parameters('location')]",
-      "properties": {
-        "publisher": "Microsoft.Compute",
-        "type": "CustomScriptExtension",
-        "typeHandlerVersion": "1.10",
-        "autoUpgradeMinorVersion": true,
-        "protectedSettings": {
-          "fileUris": [
-            "https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2006%20-%20Troubleshooting%20Azure%20Infrastructure%20as%20a%20Service%20(IaaS)%20Networking/Initialize-WebServer.ps1"
-          ],
-          "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer.ps1"
-        }
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.Compute/virtualMachines', 'webserver1')]"
       ]
     },
     {
