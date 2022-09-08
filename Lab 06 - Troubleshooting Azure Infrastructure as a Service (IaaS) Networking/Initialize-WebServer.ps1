@@ -1,99 +1,28 @@
-#Speed up by disabling progress
 $ProgressPreference = "SilentlyContinue"
 $ErrorActionPreference = "Stop"
- 
-#Install IIS
-try {
-    Write-Verbose "START: Installing IIS"
+
+Start-Job -Name "IIS" -ScriptBlock {
+    #Install IIS
     Add-WindowsFeature Web-Server, Web-IP-Security -IncludeManagementTools
-    Write-Verbose "END: Installing IIS"
- 
-}
-catch {
-    Write-Verbose "ERROR: Installing IIS"
-    throw $_
-}
-# Import WebAdministration PowerShell Module
-try {
-    Write-Verbose "START: Import WebAdministration"
+    # Import WebAdministration PowerShell Module
     Import-Module WebAdministration
-    Write-Verbose "END: Import WebAdministration"
- 
-}
-catch {
-    Write-Verbose "ERROR: Import WebAdministration"
-    throw $_
-}
-
-#Download .Net Core IIS Hosting Bundle
-try {
-    Write-Verbose "START: Download .Net Core IIS Hosting Bundle"
+    #Download .Net Core IIS Hosting Bundle
     Invoke-WebRequest -Uri 'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/raw/master/Shared/Software/dotnet-hosting.exe' -OutFile 'C:\temp\dotnet-hosting.exe'
-    Write-Verbose "END: Download .Net Core IIS Hosting Bundle"
-}
-catch {
-    Write-Verbose "ERROR: Download .Net Core IIS Hosting Bundle"
-    throw $_
-}
-
-#Install the .Net Core IIS Hosting Bundle
-#See: https://docs.microsoft.com/en-us/aspnet/core/tutorials/publish-to-iis?view=aspnetcore-6.0&tabs=visual-studio
-try {
-    Write-Verbose "START: Install .Net Core IIS Hosting Bundle"
+    #Install the .Net Core IIS Hosting Bundle
     Start-Process -FilePath "C:\temp\dotnet-hosting.exe" -ArgumentList @('/quiet', '/norestart') -Wait -PassThru
-    Write-Verbose "END: Install .Net Core IIS Hosting Bundle"
-}
-catch {
-    Write-Verbose "ERROR: Install .Net Core IIS Hosting Bundle"
-    throw $_
-}
-
-#Download the Core Module
-#Note: This should be installed automatically, but it wasn't, so manual it is!
-try {
-    Write-Verbose "START: Download .Net Core Module"
+    #Download the Core Module
     Invoke-WebRequest -Uri 'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/raw/master/Shared/Software/AspNetCoreModuleV2_x64.msi' -OutFile 'C:\temp\AspNetCoreModuleV2_x64.msi'
-    Write-Verbose "END: Download .Net Core Module"
-}
-catch {
-    Write-Verbose "ERROR: Download .Net Core Module"
-    throw $_
-}
-
-#Install Core Module
-try {
-    Write-Verbose "START: Install .Net Core Module"
-    Start-Process -FilePath 'msiexec' -ArgumentList @('/i "C:\Temp\AspNetCoreModuleV2_x64.msi"', '/qn') -Wait 
-    Write-Verbose "END: Install .Net Core Module"
-}
-catch {
-    Write-Verbose "ERROR: Install .Net Core Module"
-    throw $_
-}
-
-#Secure WebServer
-try {
-    Write-Verbose "START: Secure WebServer"
-    #Forbid other IPs from connecting to the WebServer
+    #Install Core Module
+    Start-Process -FilePath 'msiexec' -ArgumentList @('/i "C:\Temp\AspNetCoreModuleV2_x64.msi"', '/qn') -Wait
+    #Secure WebServer
     Add-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "." -value @{ipAddress = '10.1.0.5'; allowed = 'True' }
     Add-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "." -value @{ipAddress = '10.1.0.6'; allowed = 'True' }
     Set-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "allowUnlisted" -value "False"
     Set-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "denyAction" -value "Forbidden"
-    #Disable Remote Desktop Firewall Rule
-    Get-NetFirewallRule -Name "*RemoteDesktop*" | Where-Object Enabled -eq True | Set-NetFirewallRule -Enabled False
     #Set DNS Host Header for website
     Set-WebBinding -Name 'Default Web Site' -BindingInformation '*:80:' -PropertyName HostHeader -Value 'escape.lab.vnet'
-    Write-Verbose "END: Secure WebServer"
-}
-catch {
-    Write-Verbose "ERROR: Secure WebServer"
-    throw $_
-}
- 
-#Set Physical Path and Credentials
-try {
+    #Set Physical Path and Credentials
     #Physical Path
-    Write-Verbose "START: Set Physical Path and Credentials"
     Set-ItemProperty 'IIS:\Sites\Default Web Site\' -Name physicalPath -Value '\\10.0.1.139\Web'
     Set-ItemProperty 'IIS:\Sites\Default Web Site\' -Name userName -Value 'DoNotUse'
     Set-ItemProperty 'IIS:\Sites\Default Web Site\' -Name password -Value 'SuperSecureP@55w0rd'
@@ -101,34 +30,19 @@ try {
     Set-ItemProperty IIS:\AppPools\DefaultAppPool -name processModel.identityType -Value SpecificUser
     Set-ItemProperty IIS:\AppPools\DefaultAppPool -name processModel.userName -Value "DoNotUse"
     Set-ItemProperty IIS:\AppPools\DefaultAppPool -name processModel.password -Value "SuperSecureP@55w0rd"
-    Write-Verbose "END: Set Physical Path and Credentials"
-}
-catch {
-    Write-Verbose "ERROR: Set Physical Path and Credentials"
-    throw $_
-}
- 
-#Restart IIS Services
-try {
-    Write-Verbose "START: Restart required services"
+    #Restart IIS Services
     Stop-Service -Name was -Force
     Start-Service -Name w3svc
-    Write-Verbose "END: Restart required services"
-}
-catch {
-    Write-Verbose "ERROR: Restart required services"
-    throw $_
+    }
+
+Start-Job -Name "Firewall" -ScriptBlock {
+    #Disable Remote Desktop Firewall Rule
+    Get-NetFirewallRule -Name "*RemoteDesktop*" | Where-Object Enabled -eq True | Set-NetFirewallRule -Enabled False
 }
 
-#Setup Environment Variables
-try {
-    Write-Verbose "START: Set Environment Variables"
+Start-Job -Name "EnvironmentVariables" -ScriptBlock {
     Install-PackageProvider -Name 'Nuget' -MinimumVersion 2.8.5.201 -Force
     Install-Module 'Az.Accounts','Az.Storage' -Force
     Connect-AzAccount -Identity
     $env:STORAGE_ACCOUNT = (Get-AzStorageAccount).StorageAccountName
-    Write-Verbose "END: Set Environment Variables"
-} catch {
-    Write-Verbose "ERROR: Set Environment Variables"
-    throw $_
 }

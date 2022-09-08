@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "10885574943491694837"
+      "templateHash": "15936475306669018915"
     }
   },
   "parameters": {
@@ -15,40 +15,6 @@
     }
   },
   "resources": [
-    {
-      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
-      "apiVersion": "2018-11-30",
-      "name": "ManagedIdentity",
-      "location": "[parameters('location')]"
-    },
-    {
-      "type": "Microsoft.Authorization/roleAssignments",
-      "apiVersion": "2020-04-01-preview",
-      "name": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity'), resourceGroup().id, 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
-      "properties": {
-        "description": "Managed identity description",
-        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')).principalId]",
-        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
-        "principalType": "ServicePrincipal"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')]"
-      ]
-    },
-    {
-      "type": "Microsoft.Authorization/roleAssignments",
-      "apiVersion": "2020-04-01-preview",
-      "name": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity'), resourceGroup().id, 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')]",
-      "properties": {
-        "description": "Blob Role Assignment",
-        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')).principalId]",
-        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'ba92f5b4-2d11-453d-a403-e96b0029c9fe')]",
-        "principalType": "ServicePrincipal"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')]"
-      ]
-    },
     {
       "type": "Microsoft.Storage/storageAccounts",
       "apiVersion": "2021-02-01",
@@ -88,7 +54,6 @@
         "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'jumpbox1', 'jumpbox1-cse')]",
         "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'jumpbox2', 'jumpbox2-cse')]",
         "[resourceId('Microsoft.Network/virtualNetworks', 'jumpboxvnet')]",
-        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')]",
         "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', split(format('{0}/peertojumpboxvnet', 'workloadvnet'), '/')[0], split(format('{0}/peertojumpboxvnet', 'workloadvnet'), '/')[1])]",
         "[resourceId('Microsoft.Network/virtualNetworks/virtualNetworkPeerings', split(format('{0}/peertoworkloadvnet', 'jumpboxvnet'), '/')[0], split(format('{0}/peertoworkloadvnet', 'jumpboxvnet'), '/')[1])]",
         "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'webserver1', 'webserver1-cse')]",
@@ -377,7 +342,9 @@
           "vmSize": "Standard_B2s"
         },
         "osProfile": {
-          "computerName": "jumpbox1"
+          "computerName": "jumpbox1",
+          "adminUsername": "DoNotUse",
+          "adminPassword": "SuperSecureP@55w0rd"
         },
         "storageProfile": {
           "imageReference": {
@@ -479,7 +446,9 @@
           "vmSize": "Standard_B2s"
         },
         "osProfile": {
-          "computerName": "jumpbox2"
+          "computerName": "jumpbox2",
+          "adminUsername": "DoNotUse",
+          "adminPassword": "SuperSecureP@55w0rd"
         },
         "storageProfile": {
           "imageReference": {
@@ -602,7 +571,6 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')]",
         "[resourceId('Microsoft.Network/networkInterfaces', 'webserver1nic1')]"
       ]
     },
@@ -697,8 +665,7 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', 'fileserver1nic1')]",
-        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')]"
+        "[resourceId('Microsoft.Network/networkInterfaces', 'fileserver1nic1')]"
       ]
     },
     {
