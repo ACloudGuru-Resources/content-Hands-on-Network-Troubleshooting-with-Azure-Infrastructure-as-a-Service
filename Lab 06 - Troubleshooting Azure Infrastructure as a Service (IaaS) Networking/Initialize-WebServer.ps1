@@ -46,3 +46,7 @@ Start-Job -Name "EnvironmentVariables" -ScriptBlock {
     Connect-AzAccount -Identity
     $env:STORAGE_ACCOUNT = (Get-AzStorageAccount).StorageAccountName
 }
+
+while (Get-Job -State Running) {
+    Start-Sleep -Seconds 1
+}
