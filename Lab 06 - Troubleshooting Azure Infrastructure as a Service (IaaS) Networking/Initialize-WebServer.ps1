@@ -37,7 +37,7 @@ Start-Job -Name "IIS" -ScriptBlock {
 
 Start-Job -Name "Firewall" -ScriptBlock {
     #Disable Remote Desktop Firewall Rule
-    Get-NetFirewallRule -Name "*RemoteDesktop*" | Where-Object Enabled -eq True | Set-NetFirewallRule -Enabled False
+    #Get-NetFirewallRule -Name "*RemoteDesktop*" | Where-Object Enabled -eq True | Set-NetFirewallRule -Enabled False
 }
 
 Start-Job -Name "EnvironmentVariables" -ScriptBlock {
