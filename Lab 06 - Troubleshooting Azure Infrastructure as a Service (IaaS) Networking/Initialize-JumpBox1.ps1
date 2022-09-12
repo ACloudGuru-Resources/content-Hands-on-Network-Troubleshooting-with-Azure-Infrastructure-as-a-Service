@@ -21,9 +21,9 @@ Register-ScheduledTask -TaskName "Install-Virus" -Action $Action -Trigger $Trigg
 $Random = Get-Random -Minimum 1 -Maximum 10
 if ($Random -le 5) {
     #Add a hosts entry to break DNS
-    Add-Content -Value "192.168.0.1 escape.lab.vnet" -Path "C:\Windows\System32\drivers\etc\hosts"
+    
 } else {
     #Add a Firewall Rule to break outbound port 80
-    New-NetFirewallRule -DisplayName "Block Outbound Port 80" -Direction Outbound -LocalPort 80 -Protocol TCP -Action Block -Profile Any
-    Enable-NetFirewallRule -DisplayName "Block Outbound Port 80"
+    #New-NetFirewallRule -DisplayName "Block Outbound Port 80" -Direction Outbound -LocalPort 80 -Protocol TCP -Action Block -Profile Any
+    #Enable-NetFirewallRule -DisplayName "Block Outbound Port 80"
 }
