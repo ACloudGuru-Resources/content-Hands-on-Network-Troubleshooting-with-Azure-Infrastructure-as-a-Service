@@ -539,9 +539,6 @@ resource webserver1nic1 'Microsoft.Network/networkInterfaces@2020-11-01' = {
 resource webserver1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
   name: 'webserver1'
   location: location
-  dependsOn: [
-    
-  ]
   identity: {
     type: 'UserAssigned'
     userAssignedIdentities: {
