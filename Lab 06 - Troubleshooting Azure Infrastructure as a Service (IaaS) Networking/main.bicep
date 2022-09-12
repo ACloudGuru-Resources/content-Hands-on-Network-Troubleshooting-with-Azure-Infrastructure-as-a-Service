@@ -668,6 +668,9 @@ resource fileserver1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
 resource fileserver1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
   parent: fileserver1
   name: 'fileserver1-cse'
+  dependsOn: [
+    webserver1CSE
+  ]
   location: location
   properties: {
     publisher: 'Microsoft.Compute'

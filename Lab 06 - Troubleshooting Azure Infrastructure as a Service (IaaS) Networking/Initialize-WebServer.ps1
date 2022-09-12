@@ -19,6 +19,7 @@ Start-Job -Name "IIS" -ScriptBlock {
     Add-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "." -value @{ipAddress = '10.1.0.6'; allowed = 'True' }
     Set-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "allowUnlisted" -value "False"
     Set-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "denyAction" -value "Forbidden"
+    Set-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST/Default Web Site'  -filter "system.webServer/aspNetCore" -name "stdoutLogEnabled" -value "True"
     #Set DNS Host Header for website
     Set-WebBinding -Name 'Default Web Site' -BindingInformation '*:80:' -PropertyName HostHeader -Value 'escape.lab.vnet'
     #Set Physical Path and Credentials
@@ -44,7 +45,7 @@ Start-Job -Name "EnvironmentVariables" -ScriptBlock {
     Install-PackageProvider -Name 'Nuget' -MinimumVersion 2.8.5.201 -Force
     Install-Module 'Az.Accounts','Az.Storage' -Force
     Connect-AzAccount -Identity
-    $env:STORAGE_ACCOUNT = (Get-AzStorageAccount).StorageAccountName
+    [Environment]::SetEnvironmentVariable('STORAGE_ACCOUNT', "$((Get-AzStorageAccount).StorageAccountName)", 'Machine')
 }
 
 while (Get-Job -State Running) {
