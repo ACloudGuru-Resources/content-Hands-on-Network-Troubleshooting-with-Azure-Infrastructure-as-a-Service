@@ -49,6 +49,5 @@ while (Get-Job -State Running) {
     Start-Sleep -Seconds 1
 }
 #Restart IIS last to load Envinronment variables
-iisreset
 Stop-Service -Name was -Force
 Start-Service -Name w3svc
