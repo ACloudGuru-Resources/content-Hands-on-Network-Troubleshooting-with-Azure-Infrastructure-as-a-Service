@@ -1,5 +1,7 @@
 param location string = resourceGroup().location
 
+var broken = true
+
 resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2018-11-30' = {
   name: 'ManagedIdentity'
   location: location
@@ -35,7 +37,7 @@ resource storageaccount 'Microsoft.Storage/storageAccounts@2021-02-01' = {
   }
 }
 
-resource DeploymentScript 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
+resource DeploymentScript 'Microsoft.Resources/deploymentScripts@2020-10-01' = if (broken) {
   name: 'DeploymentScript'
   location: location
   dependsOn: [
@@ -410,7 +412,7 @@ resource jumpbox1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
   }
 }
 
-resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
+resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = if (broken) {
   parent: jumpbox1
   name: 'jumpbox1-cse'
   location: location
@@ -421,7 +423,7 @@ resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' =
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
-        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2006%20-%20Troubleshooting%20Azure%20Infrastructure%20as%20a%20Service%20(IaaS)%20Networking/Initialize-JumpBox1.ps1'
+        broken ? 'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2006%20-%20Troubleshooting%20Azure%20Infrastructure%20as%20a%20Service%20(IaaS)%20Networking/Initialize-JumpBox1.ps1' : 'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2006%20-%20Troubleshooting%20Azure%20Infrastructure%20as%20a%20Service%20(IaaS)%20Networking/Initialize-JumpBox1Fixed.ps1'
       ]
       commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-JumpBox1.ps1'
     }
@@ -499,7 +501,7 @@ resource jumpbox2 'Microsoft.Compute/virtualMachines@2020-12-01' = {
   }
 }
 
-resource jumpbox2CSE 'Microsoft.Compute/virtualMachines/extensions@2019-03-01' = {
+resource jumpbox2CSE 'Microsoft.Compute/virtualMachines/extensions@2019-03-01' = if (broken) {
   parent: jumpbox2
   name: 'jumpbox2-cse'
   location: location
@@ -510,7 +512,7 @@ resource jumpbox2CSE 'Microsoft.Compute/virtualMachines/extensions@2019-03-01' =
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
-        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2006%20-%20Troubleshooting%20Azure%20Infrastructure%20as%20a%20Service%20(IaaS)%20Networking/Jumpbox2.sh'
+        broken ? 'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2006%20-%20Troubleshooting%20Azure%20Infrastructure%20as%20a%20Service%20(IaaS)%20Networking/Jumpbox2.sh' : 'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2006%20-%20Troubleshooting%20Azure%20Infrastructure%20as%20a%20Service%20(IaaS)%20Networking/Jumpbox2Fixed.sh'
       ]
       commandToExecute: 'sh Jumpbox2.sh'
     }
