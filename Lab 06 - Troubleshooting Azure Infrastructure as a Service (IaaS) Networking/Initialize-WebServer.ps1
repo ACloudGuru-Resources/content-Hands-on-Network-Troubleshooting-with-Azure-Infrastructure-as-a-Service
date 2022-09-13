@@ -31,9 +31,6 @@ Start-Job -Name "IIS" -ScriptBlock {
     Set-ItemProperty IIS:\AppPools\DefaultAppPool -name processModel.identityType -Value SpecificUser
     Set-ItemProperty IIS:\AppPools\DefaultAppPool -name processModel.userName -Value "DoNotUse"
     Set-ItemProperty IIS:\AppPools\DefaultAppPool -name processModel.password -Value "SuperSecureP@55w0rd"
-    #Restart IIS Services
-    Stop-Service -Name was -Force
-    Start-Service -Name w3svc
     }
 
 Start-Job -Name "Firewall" -ScriptBlock {
@@ -51,3 +48,7 @@ Start-Job -Name "EnvironmentVariables" -ScriptBlock {
 while (Get-Job -State Running) {
     Start-Sleep -Seconds 1
 }
+#Restart IIS last to load Envinronment variables
+iisreset
+Stop-Service -Name was -Force
+Start-Service -Name w3svc
