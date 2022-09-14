@@ -125,7 +125,7 @@ resource nsgworkloadvnet 'Microsoft.Network/networkSecurityGroups@2019-11-01' = 
           ]
           destinationApplicationSecurityGroups: [
             {
-              id: asgdatabaseservers.id
+              id: asgwebservers.id
             }
           ]
         }
