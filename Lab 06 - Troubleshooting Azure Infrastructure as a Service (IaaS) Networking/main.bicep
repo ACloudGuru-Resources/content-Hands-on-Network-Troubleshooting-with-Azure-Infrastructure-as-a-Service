@@ -412,7 +412,7 @@ resource jumpbox1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
   }
 }
 
-resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = if (broken) {
+resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
   parent: jumpbox1
   name: 'jumpbox1-cse'
   location: location
@@ -425,7 +425,7 @@ resource jumpbox1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' =
       fileUris: [
         broken ? 'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2006%20-%20Troubleshooting%20Azure%20Infrastructure%20as%20a%20Service%20(IaaS)%20Networking/Initialize-JumpBox1.ps1' : 'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2006%20-%20Troubleshooting%20Azure%20Infrastructure%20as%20a%20Service%20(IaaS)%20Networking/Initialize-JumpBox1Fixed.ps1'
       ]
-      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-JumpBox1.ps1'
+      commandToExecute: broken ? 'powershell.exe -ExecutionPolicy Bypass -File Initialize-JumpBox1.ps1' : 'powershell.exe -ExecutionPolicy Bypass -File Initialize-JumpBox1Fixed.ps1'
     }
   }
 }
@@ -501,7 +501,7 @@ resource jumpbox2 'Microsoft.Compute/virtualMachines@2020-12-01' = {
   }
 }
 
-resource jumpbox2CSE 'Microsoft.Compute/virtualMachines/extensions@2019-03-01' = if (broken) {
+resource jumpbox2CSE 'Microsoft.Compute/virtualMachines/extensions@2019-03-01' = {
   parent: jumpbox2
   name: 'jumpbox2-cse'
   location: location
@@ -514,7 +514,7 @@ resource jumpbox2CSE 'Microsoft.Compute/virtualMachines/extensions@2019-03-01' =
       fileUris: [
         broken ? 'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2006%20-%20Troubleshooting%20Azure%20Infrastructure%20as%20a%20Service%20(IaaS)%20Networking/Jumpbox2.sh' : 'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2006%20-%20Troubleshooting%20Azure%20Infrastructure%20as%20a%20Service%20(IaaS)%20Networking/Jumpbox2Fixed.sh'
       ]
-      commandToExecute: 'sh Jumpbox2.sh'
+      commandToExecute: broken ? 'sh Jumpbox2.sh' : 'sh Jumpbox2Fixed.sh'
     }
   }
 }
