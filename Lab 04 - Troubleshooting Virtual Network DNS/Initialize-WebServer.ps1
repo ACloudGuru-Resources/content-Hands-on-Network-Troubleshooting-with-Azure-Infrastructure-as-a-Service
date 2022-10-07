@@ -91,7 +91,7 @@ catch {
 }
 
 #Copy Webserver Content
-Invoke-WebRequest -Uri 'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/raw/master/Lab%2002%20-%20Troubleshooting%20Application%20Security%20Groups/WebApp/WebApp.zip' -OutFile 'C:\temp\WebApp.zip'
+Invoke-WebRequest -Uri 'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/raw/master/Lab%2004%20-%20Troubleshooting%20Virtual%20Network%20DNS/WebApp/WebApp.zip' -OutFile 'C:\temp\WebApp.zip'
 Expand-Archive -Path 'C:\temp\WebApp.zip' -DestinationPath 'C:\inetpub\wwwroot' -Force
 
 #Restart IIS Services
