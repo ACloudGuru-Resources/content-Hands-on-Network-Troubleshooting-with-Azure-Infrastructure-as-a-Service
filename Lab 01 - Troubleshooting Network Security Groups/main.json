@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "2726601655678186827"
+      "templateHash": "6644114679893467600"
     }
   },
   "parameters": {
@@ -83,7 +83,7 @@
       "properties": {
         "securityRules": [
           {
-            "name": "Allow web traffic to web subnet",
+            "name": "Allow_web_traffic_to_web_subnet",
             "properties": {
               "description": "Allow web traffic to web subnet",
               "protocol": "Tcp",
@@ -97,7 +97,7 @@
             }
           },
           {
-            "name": "Deny all traffic to web subnet",
+            "name": "Deny_all_traffic_to_web_subnet",
             "properties": {
               "description": "Deny all traffic to web subnet",
               "protocol": "Tcp",
@@ -121,7 +121,7 @@
       "properties": {
         "securityRules": [
           {
-            "name": "Allow inbound RDP jumpbox subnet",
+            "name": "Allow_inbound_RDP_jumpbox_subnet",
             "properties": {
               "description": "Allow RDP jumpbox subnet",
               "protocol": "Tcp",
@@ -135,7 +135,7 @@
             }
           },
           {
-            "name": "Allow outbound HTTP from jumpbox subnet to web subnet",
+            "name": "Allow_outbound_HTTP_from_jumpbox_subnet_to_web_subnet",
             "properties": {
               "description": "Allow outbound HTTP from jumpbox subnet to web subnet",
               "protocol": "Tcp",
@@ -149,9 +149,9 @@
             }
           },
           {
-            "name": "Deny outbound to vnet1 from jumpbox subnet",
+            "name": "Deny_outbound_to_vnet1_from_jumpbox_subnet",
             "properties": {
-              "description": "Deny outbound to vnet1 from jumpbox subnet",
+              "description": "Denyoutbound to vnet1 from jumpbox subnet",
               "protocol": "Tcp",
               "sourcePortRange": "*",
               "destinationPortRange": "*",
@@ -216,7 +216,7 @@
       "properties": {
         "securityRules": [
           {
-            "name": "Allow Remote Desktop to jumpbox1",
+            "name": "Allow_Remote_Desktop_to_jumpbox1",
             "properties": {
               "description": "Allow Remote Desktop to jumpbox1",
               "protocol": "Tcp",
@@ -374,9 +374,9 @@
         "autoUpgradeMinorVersion": true,
         "protectedSettings": {
           "fileUris": [
-            "https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/Initialize-WebServer_update.ps1"
+            "https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/Initialize-WebServer1.ps1"
           ],
-          "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer_update.ps1"
+          "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer1.ps1"
         }
       },
       "dependsOn": [
@@ -418,7 +418,7 @@
       "properties": {
         "securityRules": [
           {
-            "name": "AllowSMBtoFileServer1",
+            "name": "Allow_SMB_to_FileServer1",
             "properties": {
               "description": "Allow SMB traffic to web subnet",
               "protocol": "Tcp",
@@ -503,7 +503,9 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Compute/virtualMachines', 'fileserver1')]"
+        "[resourceId('Microsoft.Compute/virtualMachines', 'fileserver1')]",
+        "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'jumpbox1', 'jumpbox1-cse')]",
+        "[resourceId('Microsoft.Compute/virtualMachines/extensions', 'webserver1', 'webserver1-cse')]"
       ]
     }
   ],

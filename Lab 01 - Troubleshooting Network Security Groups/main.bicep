@@ -56,7 +56,7 @@ resource nsgwebsubnet 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {
   properties: {
     securityRules: [
       {
-        name: 'Allow web traffic to web subnet'
+        name: 'Allow_web_traffic_to_web_subnet'
         properties: {
           description: 'Allow web traffic to web subnet'
           protocol: 'Tcp'
@@ -70,7 +70,7 @@ resource nsgwebsubnet 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {
         }
       }
       {
-        name: 'Deny all traffic to web subnet'
+        name: 'Deny_all_traffic_to_web_subnet'
         properties: {
           description: 'Deny all traffic to web subnet'
           protocol: 'Tcp'
@@ -93,7 +93,7 @@ resource nsgjumpsubnet 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {
   properties: {
     securityRules: [
       {
-        name: 'Allow inbound RDP jumpbox subnet'
+        name: 'Allow_inbound_RDP_jumpbox_subnet'
         properties: {
           description: 'Allow RDP jumpbox subnet'
           protocol: 'Tcp'
@@ -107,7 +107,7 @@ resource nsgjumpsubnet 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {
         }
       }
       {
-        name: 'Allow outbound HTTP from jumpbox subnet to web subnet'
+        name: 'Allow_outbound_HTTP_from_jumpbox_subnet_to_web_subnet'
         properties: {
           description: 'Allow outbound HTTP from jumpbox subnet to web subnet'
           protocol: 'Tcp'
@@ -121,9 +121,9 @@ resource nsgjumpsubnet 'Microsoft.Network/networkSecurityGroups@2019-11-01' = {
         }
       }
       {
-        name: 'Deny outbound to vnet1 from jumpbox subnet'
+        name: 'Deny_outbound_to_vnet1_from_jumpbox_subnet'
         properties: {
-          description: 'Deny outbound to vnet1 from jumpbox subnet'
+          description: 'Denyoutbound to vnet1 from jumpbox subnet'
           protocol: 'Tcp'
           sourcePortRange: '*'
           destinationPortRange: '*'
@@ -180,7 +180,7 @@ resource nsgjumpbox1nic1 'Microsoft.Network/networkSecurityGroups@2019-11-01' = 
   properties: {
     securityRules: [
       {
-        name: 'Allow Remote Desktop to jumpbox1'
+        name: 'Allow_Remote_Desktop_to_jumpbox1'
         properties: {
           description: 'Allow Remote Desktop to jumpbox1'
           protocol: 'Tcp'
@@ -320,9 +320,9 @@ resource webserver1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01'
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
-        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/Initialize-WebServer_update.ps1'
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/Initialize-WebServer1.ps1'
       ]
-      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer_update.ps1'
+      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer1.ps1'
     }
   }
 }
@@ -353,7 +353,7 @@ resource nsgfileserver1nic1 'Microsoft.Network/networkSecurityGroups@2019-11-01'
   properties: {
     securityRules: [
       {
-        name: 'AllowSMBtoFileServer1'
+        name: 'Allow_SMB_to_FileServer1'
         properties: {
           description: 'Allow SMB traffic to web subnet'
           protocol: 'Tcp'
@@ -416,6 +416,10 @@ resource fileserver1 'Microsoft.Compute/virtualMachines@2020-12-01' = {
 }
 resource fileserver1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01' = {
   parent: fileserver1
+  dependsOn: [
+    jumpbox1CSE
+    webserver1CSE
+  ]
   name: 'fileserver1-cse'
   location: location
   properties: {
