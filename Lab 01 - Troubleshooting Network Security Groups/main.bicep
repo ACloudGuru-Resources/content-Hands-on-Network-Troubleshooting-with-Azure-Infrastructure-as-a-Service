@@ -320,9 +320,9 @@ resource webserver1CSE 'Microsoft.Compute/virtualMachines/extensions@2020-12-01'
     autoUpgradeMinorVersion: true
     protectedSettings: {
       fileUris: [
-        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/Initialize-WebServer1.ps1'
+        'https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/Initialize-WebServer_update.ps1'
       ]
-      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer1.ps1'
+      commandToExecute: 'powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer_update.ps1'
     }
   }
 }

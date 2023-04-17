@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "2873739071641786680"
+      "templateHash": "2726601655678186827"
     }
   },
   "parameters": {
@@ -374,9 +374,9 @@
         "autoUpgradeMinorVersion": true,
         "protectedSettings": {
           "fileUris": [
-            "https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/Initialize-WebServer1.ps1"
+            "https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/Initialize-WebServer_update.ps1"
           ],
-          "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer1.ps1"
+          "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -File Initialize-WebServer_update.ps1"
         }
       },
       "dependsOn": [
