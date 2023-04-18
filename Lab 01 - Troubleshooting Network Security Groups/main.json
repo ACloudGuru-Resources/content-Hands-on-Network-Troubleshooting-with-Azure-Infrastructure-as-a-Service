@@ -5,7 +5,7 @@
     "_generator": {
       "name": "bicep",
       "version": "0.9.1.41621",
-      "templateHash": "16251783783565210927"
+      "templateHash": "12740153592051810674"
     }
   },
   "parameters": {
@@ -18,26 +18,6 @@
     "broken": true
   },
   "resources": [
-    {
-      "type": "Microsoft.ManagedIdentity/userAssignedIdentities",
-      "apiVersion": "2018-11-30",
-      "name": "ManagedIdentity",
-      "location": "[parameters('location')]"
-    },
-    {
-      "type": "Microsoft.Authorization/roleAssignments",
-      "apiVersion": "2020-04-01-preview",
-      "name": "[guid(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity'), resourceGroup().id, 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
-      "properties": {
-        "description": "Managed identity description",
-        "principalId": "[reference(resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')).principalId]",
-        "roleDefinitionId": "[subscriptionResourceId('Microsoft.Authorization/roleDefinitions', 'b24988ac-6180-42a0-ab88-20f7382dd24c')]",
-        "principalType": "ServicePrincipal"
-      },
-      "dependsOn": [
-        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')]"
-      ]
-    },
     {
       "type": "Microsoft.Network/virtualNetworks",
       "apiVersion": "2019-11-01",
@@ -439,12 +419,6 @@
       "apiVersion": "2020-12-01",
       "name": "fileserver1",
       "location": "[parameters('location')]",
-      "identity": {
-        "type": "UserAssigned",
-        "userAssignedIdentities": {
-          "[format('{0}', resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity'))]": {}
-        }
-      },
       "properties": {
         "hardwareProfile": {
           "vmSize": "Standard_B2s"
@@ -481,8 +455,28 @@
         }
       },
       "dependsOn": [
-        "[resourceId('Microsoft.Network/networkInterfaces', 'fileserver1nic1')]",
-        "[resourceId('Microsoft.ManagedIdentity/userAssignedIdentities', 'ManagedIdentity')]"
+        "[resourceId('Microsoft.Network/networkInterfaces', 'fileserver1nic1')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Compute/virtualMachines/extensions",
+      "apiVersion": "2020-12-01",
+      "name": "[format('{0}/{1}', 'fileserver1', 'fileserver1-cse')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "publisher": "Microsoft.Compute",
+        "type": "CustomScriptExtension",
+        "typeHandlerVersion": "1.10",
+        "autoUpgradeMinorVersion": true,
+        "protectedSettings": {
+          "fileUris": [
+            "https://raw.githubusercontent.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/master/Lab%2001%20-%20Troubleshooting%20Network%20Security%20Groups/Initialize-FileServer1.ps1"
+          ],
+          "commandToExecute": "powershell.exe -ExecutionPolicy Bypass -File Initialize-FileServer1.ps1"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Compute/virtualMachines', 'fileserver1')]"
       ]
     }
   ],
