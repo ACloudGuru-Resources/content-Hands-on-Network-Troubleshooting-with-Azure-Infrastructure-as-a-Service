@@ -7,13 +7,26 @@ Start-Job -Name "IIS" -ScriptBlock {
     # Import WebAdministration PowerShell Module
     Import-Module WebAdministration
     #Download .Net Core IIS Hosting Bundle
-    Invoke-WebRequest -Uri 'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/raw/master/Shared/Software/dotnet-hosting.exe' -OutFile 'C:\temp\dotnet-hosting.exe'
+    try {
+        Write-Verbose "START: Download .Net Core IIS Hosting Bundle"
+        Invoke-WebRequest -Uri 'https://download.visualstudio.microsoft.com/download/pr/6744eb9d-dcd4-4386-9d87-b03b70fc58ce/818fadf3f3d919c17ba845b2195bfd9b/dotnet-hosting-3.1.32-win.exe' -OutFile 'C:\temp\dotnet-hosting.exe'
+        Write-Verbose "END: Download .Net Core IIS Hosting Bundle"
+    }
+    catch {
+        Write-Verbose "ERROR: Download .Net Core IIS Hosting Bundle"
+        throw $_
+    }
+
     #Install the .Net Core IIS Hosting Bundle
-    Start-Process -FilePath "C:\temp\dotnet-hosting.exe" -ArgumentList @('/quiet', '/norestart') -Wait -PassThru
-    #Download the Core Module
-    Invoke-WebRequest -Uri 'https://github.com/ACloudGuru-Resources/content-Hands-on-Network-Troubleshooting-with-Azure-Infrastructure-as-a-Service/raw/master/Shared/Software/AspNetCoreModuleV2_x64.msi' -OutFile 'C:\temp\AspNetCoreModuleV2_x64.msi'
-    #Install Core Module
-    Start-Process -FilePath 'msiexec' -ArgumentList @('/i "C:\Temp\AspNetCoreModuleV2_x64.msi"', '/qn') -Wait
+    try {
+        Write-Verbose "START: Install .Net Core IIS Hosting Bundle"
+        Start-Process -FilePath "C:\temp\dotnet-hosting.exe" -ArgumentList @('/quiet', '/norestart') -Wait -PassThru
+        Write-Verbose "END: Install .Net Core IIS Hosting Bundle"
+    }
+    catch {
+        Write-Verbose "ERROR: Install .Net Core IIS Hosting Bundle"
+        throw $_
+    }
     #Secure WebServer
     Add-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "." -value @{ipAddress = '10.1.0.5'; allowed = 'True' }
     Add-WebConfigurationProperty -pspath 'MACHINE/WEBROOT/APPHOST' -location 'Default Web Site' -filter "system.webServer/security/ipSecurity" -name "." -value @{ipAddress = '10.1.0.6'; allowed = 'True' }
